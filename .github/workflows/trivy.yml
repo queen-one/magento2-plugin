@@ -1,0 +1,27 @@
+name: Trivy Scan
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * 1-5"  # Weekdays 12:00 UTC = 7:00am EST
+
+permissions:
+  contents: read
+
+jobs:
+  trivy:
+    name: Trivy filesystem scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy scan
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "table"
+          scanners: "vuln,secret,misconfig"
+          severity: "HIGH,CRITICAL"
+          skip-update: false
+          ignore-unfixed: true
