@@ -1,1 +1,4 @@
 .idea/
+.local/
+auth.json
+.env.local

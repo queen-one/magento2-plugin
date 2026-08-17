@@ -1,0 +1,21 @@
+services:
+  app:
+    volumes:
+      - type: bind
+        source: ${REJOINER_MODULE_PATH}
+        target: /var/www/html/app/code/Rejoiner/Acr
+        consistency: cached
+
+  phpfpm:
+    volumes:
+      - type: bind
+        source: ${REJOINER_MODULE_PATH}
+        target: /var/www/html/app/code/Rejoiner/Acr
+        consistency: cached
+
+  phpfpm-xdebug:
+    volumes:
+      - type: bind
+        source: ${REJOINER_MODULE_PATH}
+        target: /var/www/html/app/code/Rejoiner/Acr
+        consistency: cached
