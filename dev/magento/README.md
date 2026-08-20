@@ -11,7 +11,8 @@ not committed.
 - PHP, OpenSearch, MariaDB, Valkey, RabbitMQ and nginx versions selected by the
   docker-magento compatibility table;
 - Magento sample data and Mailcatcher;
-- current repository mounted at `app/code/Rejoiner/Acr`.
+- current repository mounted at `app/code/Rejoiner/Acr`, with the generated
+  `.local` directory masked from the container.
 
 Magento 2.4.8-p5 can be selected with `MAGENTO_VERSION=2.4.8-p5`. Keep 2.4.9 as
 the forward/Marketplace lane and add exact client versions after the client
@@ -97,6 +98,9 @@ Run:
 It verifies:
 
 - PHP and Magento runtime availability;
+- the generated `.local/magento` lab is not recursively exposed inside the
+  module mount;
+- PHP linting for the compatibility-sensitive helper and observer;
 - `Rejoiner_Acr` module status;
 - Magento database schema status;
 - the plugin queue table and both legacy extension columns;
@@ -107,8 +111,8 @@ Run dependency-injection compilation as an additional gate:
     MAGENTO_RUN_COMPILE=1 make magento-smoke
 
 If a schema assertion fails, keep the failure as evidence and create a bug.
-The current legacy InstallSchema/UpgradeSchema split may not create all objects
-on a genuinely fresh installation.
+The legacy setup scripts work in the current compatibility lane, but replacing
+them with declarative schema remains a separate Marketplace-readiness task.
 
 ## Useful commands
 
@@ -124,6 +128,13 @@ Direct Magento commands can be run from the generated lab:
     bin/magento cache:flush
     bin/mysql
     bin/log
+
+`compose.override.yaml` is refreshed automatically while it still matches the
+generated plugin template. If you customize that file, the setup preserves it
+and verifies that its `.local` mask is present. The setup stops before starting
+containers if you must merge the updated `compose.plugin.yaml` manually. Keep
+the nested `.local` volume mask when merging; bind mounts do not honor
+`.dockerignore` exclusions.
 
 Cron is deliberately not started by this repository. Do not run
 `bin/cron start` with real credentials until the scheduled conversion bug is

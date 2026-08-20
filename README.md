@@ -41,7 +41,9 @@ After installation:
 The generated Magento source, databases and local credentials live under
 `.local/` and are intentionally excluded from Git. The module repository is
 bind-mounted into Magento at `app/code/Rejoiner/Acr`, so source changes are
-visible without copying the module.
+visible without copying the module. A nested Docker volume masks `.local` from
+the container so the generated Magento application is not recursively scanned
+as part of the module.
 
 See [the Magento lab guide](dev/magento/README.md) for setup details, safety
 notes and the manual functional walkthrough.

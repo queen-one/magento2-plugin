@@ -19,6 +19,15 @@ echo "Checking runtime versions..."
 bin/cli php -v | sed -n '1p'
 bin/magento --version
 
+echo "Checking the module mount and PHP 8.5 compatibility files..."
+if bin/cli test -e app/code/Rejoiner/Acr/.local/magento; then
+    echo "FAIL: the generated Magento lab is recursively mounted inside Rejoiner_Acr" >&2
+    exit 1
+fi
+bin/cli php -l app/code/Rejoiner/Acr/Helper/Data.php >/dev/null
+bin/cli php -l app/code/Rejoiner/Acr/Observer/ControllerActionPredispatch.php >/dev/null
+echo "PASS: generated lab is masked from the module mount"
+
 echo "Checking module and Magento schema status..."
 bin/magento module:status Rejoiner_Acr
 bin/magento setup:db:status

@@ -248,7 +248,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function generateCouponCode($rule_id, string $param = 'promo'): string
     {
         $quote = $this->checkoutSession->getQuote();
-        $codes = unserialize($quote->getPromo());
+        $serializedCodes = (string) $quote->getPromo();
+        $codes = $serializedCodes !== ''
+            ? unserialize($serializedCodes, ['allowed_classes' => false])
+            : [];
+        $codes = is_array($codes) ? $codes : [];
         $couponCode = $codes[$param] ?? '';
 
         $ruleItem = $this->ruleFactory->create()->load($rule_id);
@@ -282,9 +286,16 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function getDomain(): string
     {
-        $domain = trim($this->scopeConfig->getValue(self::XML_PATH_REJOINER_DOMAIN, ScopeInterface::SCOPE_STORE));
+        $domain = trim((string) $this->scopeConfig->getValue(
+            self::XML_PATH_REJOINER_DOMAIN,
+            ScopeInterface::SCOPE_STORE
+        ));
 
-        return ($domain[0] == '.') ? $domain : '.' . $domain;
+        if ($domain === '') {
+            return '';
+        }
+
+        return ($domain[0] === '.') ? $domain : '.' . $domain;
     }
 
     /**
@@ -574,7 +585,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param string|null $customerName
      * @return $this
      */
-    public function subscribe(string $email, string $customerName = null): static
+    public function subscribe(string $email, ?string $customerName = null): static
     {
         $this->addToList($this->getRejoinerMarketingListID(), $email, $customerName);
 
@@ -662,13 +673,15 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $authorization = sprintf('Rejoiner %s', $apiKey);
 
         if ($rejoinerVersion == self::REJOINER_VERSION_1) {
-            $apiSecret = mb_convert_encoding($this->scopeConfig->getValue(self::XML_PATH_REJOINER_API_SECRET), 'UTF-8', 'ISO-8859-1');
+            $apiSecret = $this->scopeConfig->getValue(self::XML_PATH_REJOINER_API_SECRET);
 
             if (!$apiSecret) {
                 $error = 'Missing API secret';
                 $this->log($error, true);
                 throw new \Exception($error);
             }
+
+            $apiSecret = mb_convert_encoding((string) $apiSecret, 'UTF-8', 'ISO-8859-1');
 
             $hmacData       = mb_convert_encoding(implode("\n", [\Laminas\Http\Request::METHOD_POST, $requestPath, $requestBody]), 'UTF-8', 'ISO-8859-1');
             $codedApiSecret = base64_encode(hash_hmac('sha1', $hmacData, $apiSecret, true));
