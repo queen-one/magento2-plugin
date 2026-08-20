@@ -1,0 +1,39 @@
+services:
+  app:
+    volumes:
+      - type: bind
+        source: ${REJOINER_MODULE_PATH}
+        target: /var/www/html/app/code/Rejoiner/Acr
+        consistency: cached
+      - type: volume
+        source: rejoiner_module_local_mask
+        target: /var/www/html/app/code/Rejoiner/Acr/.local
+        volume:
+          nocopy: true
+
+  phpfpm:
+    volumes:
+      - type: bind
+        source: ${REJOINER_MODULE_PATH}
+        target: /var/www/html/app/code/Rejoiner/Acr
+        consistency: cached
+      - type: volume
+        source: rejoiner_module_local_mask
+        target: /var/www/html/app/code/Rejoiner/Acr/.local
+        volume:
+          nocopy: true
+
+  phpfpm-xdebug:
+    volumes:
+      - type: bind
+        source: ${REJOINER_MODULE_PATH}
+        target: /var/www/html/app/code/Rejoiner/Acr
+        consistency: cached
+      - type: volume
+        source: rejoiner_module_local_mask
+        target: /var/www/html/app/code/Rejoiner/Acr/.local
+        volume:
+          nocopy: true
+
+volumes:
+  rejoiner_module_local_mask:
