@@ -56,8 +56,12 @@ class Conversion extends AbstractHelper
         if ($order->getId()) {
             $total = $displayPriceWithTax? $order->getGrandTotal() : $order->getSubtotal();
             $result = [
+                'cart_id' => (string) $order->getQuoteId(),
                 'cart_value' => $this->rejoinerHelper->convertPriceToCents($total),
                 'cart_item_count' => intval($order->getTotalQtyOrdered()),
+                'queen_one_total_price' => $this->rejoinerHelper->convertPriceToCents($order->getGrandTotal()),
+                'queen_one_subtotal_price' => $this->rejoinerHelper->convertPriceToCents($order->getSubtotal()),
+                'currency_code' => (string) $order->getOrderCurrencyCode(),
                 'customer_order_number' => $order->getIncrementId(),
                 'return_url' => $this->_urlBuilder->getUrl('sales/order/view/', ['order_id' => $order->getIncrementId()])
             ];

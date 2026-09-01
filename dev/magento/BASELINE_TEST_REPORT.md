@@ -40,6 +40,24 @@ Evidence links or attachments:
 | Cart recovery | Cart restored in disposable session | Not run | |
 | Scheduled conversion | Deferred until cron defect is fixed | Blocked | Known legacy defect |
 
+## Queen One shadow results
+
+Frontend tracking mode:
+
+Queen One tag URL:
+
+| Scenario | Expected evidence | Result | Evidence / defect |
+| --- | --- | --- | --- |
+| Default mode | Only the existing Rejoiner frontend loads | Not run | |
+| Dual mode page | `page_viewed`, `module_id: magento2` | Not run | |
+| Product page | `product_viewed` with catalog-compatible product ID | Not run | |
+| Cart mutation | One `cart_set` with full products and currency-aware Money values | Not run | |
+| Empty cart | `cart_reset` | Not run | |
+| Customer login | `user_identified` with synthetic email | Not run | |
+| Checkout success | `order_created` with order ID, total and items | Not run | |
+| Dual mode regression | Existing `_rejoiner` commands still appear | Not run | |
+| Queen One mode | No `cdn.rejoiner.com` frontend script request | Not run | |
+
 ## Findings
 
 ### Confirmed behavior

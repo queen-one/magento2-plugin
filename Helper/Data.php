@@ -20,11 +20,14 @@ use Magento\SalesRule\Model\CouponFactory;
 use Magento\SalesRule\Model\RuleFactory;
 use \Magento\Store\Model\ScopeInterface;
 use Monolog\Logger;
+use Rejoiner\Acr\Model\System\Config\Source\FrontendTrackingMode;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
     private const XML_PATH_REJOINER_ENABLED                         = 'checkout/rejoiner_acr/enabled';
     private const XML_PATH_REJOINER_SITE_ID                        = 'checkout/rejoiner_acr/site_id';
+    private const XML_PATH_FRONTEND_TRACKING_MODE                   = 'checkout/rejoiner_acr/frontend_tracking_mode';
+    private const XML_PATH_QUEEN_ONE_TAG_URL                        = 'checkout/rejoiner_acr/queen_one_tag_url';
     private const XML_PATH_REJOINER_DOMAIN                         = 'checkout/rejoiner_acr/domain';
     private const XML_PATH_REJOINER_TRACK_NUMBERS                  = 'checkout/rejoiner_acr/track_numbers';
     private const XML_PATH_REJOINER_TRACK_PRICE_WITH_TAX           = 'checkout/rejoiner_acr/track_price_with_tax';
@@ -304,6 +307,46 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getRejoinerSiteId(): string
     {
         return (string) $this->scopeConfig->getValue(self::XML_PATH_REJOINER_SITE_ID, ScopeInterface::SCOPE_STORE);
+    }
+
+    public function getFrontendTrackingMode(): string
+    {
+        $mode = (string) $this->scopeConfig->getValue(
+            self::XML_PATH_FRONTEND_TRACKING_MODE,
+            ScopeInterface::SCOPE_STORE
+        );
+
+        return in_array(
+            $mode,
+            [FrontendTrackingMode::REJOINER, FrontendTrackingMode::DUAL, FrontendTrackingMode::QUEEN_ONE],
+            true
+        ) ? $mode : FrontendTrackingMode::REJOINER;
+    }
+
+    public function isRejoinerFrontendEnabled(): bool
+    {
+        return in_array(
+            $this->getFrontendTrackingMode(),
+            [FrontendTrackingMode::REJOINER, FrontendTrackingMode::DUAL],
+            true
+        );
+    }
+
+    public function isQueenOneFrontendEnabled(): bool
+    {
+        return in_array(
+            $this->getFrontendTrackingMode(),
+            [FrontendTrackingMode::DUAL, FrontendTrackingMode::QUEEN_ONE],
+            true
+        );
+    }
+
+    public function getQueenOneTagUrl(): string
+    {
+        return trim((string) $this->scopeConfig->getValue(
+            self::XML_PATH_QUEEN_ONE_TAG_URL,
+            ScopeInterface::SCOPE_STORE
+        ));
     }
 
     /**

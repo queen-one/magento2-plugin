@@ -34,6 +34,23 @@
                         <field id="enabled">1</field>
                     </depends>
                 </field>
+                <field id="frontend_tracking_mode" translate="label comment" type="select" sortOrder="6" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Frontend Tracking Mode</label>
+                    <comment>Use dual mode to validate Queen One tracking while keeping the current Rejoiner frontend active.</comment>
+                    <source_model>Rejoiner\Acr\Model\System\Config\Source\FrontendTrackingMode</source_model>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+                <field id="queen_one_tag_url" translate="label comment" type="text" sortOrder="7" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Queen One Tag URL</label>
+                    <comment>Use the approved Queen One development or production queen-one.js URL.</comment>
+                    <validate>required-entry validate-url</validate>
+                    <depends>
+                        <field id="enabled">1</field>
+                        <field id="frontend_tracking_mode" separator=",">dual,queen_one</field>
+                    </depends>
+                </field>
                 <field id="api_key" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Rejoiner API key</label>
                     <validate>required-entry</validate>

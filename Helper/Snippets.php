@@ -84,8 +84,13 @@ class Snippets extends \Magento\Framework\App\Helper\AbstractHelper
         if ($quote->getAllVisibleItems()) {
             $total = $displayPriceWithTax? $quote->getGrandTotal() : $quote->getSubtotal();
             $result = [
+                'cart_id'           => (string) $quote->getId(),
                 'total_items_count' => (string) intval($quote->getItemsQty()),
                 'cart_value'        => (string) $this->rejoinerHelper->convertPriceToCents($total),
+                'queen_one_cart_value' => (string) $this->rejoinerHelper->convertPriceToCents(
+                    $quote->getGrandTotal()
+                ),
+                'currency_code'     => (string) $quote->getQuoteCurrencyCode(),
                 'return_url'        => (string) $this->rejoinerHelper->getRestoreUrl()
             ];
             if ($this->rejoinerHelper->getIsEnabledCouponCodeGeneration()) {

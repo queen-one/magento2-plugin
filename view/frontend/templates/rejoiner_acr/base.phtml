@@ -20,11 +20,19 @@ foreach ($childBlockNames as $childBlockName) {
     }
 }
 ?>
-<?php if ($rejoinerHelper->getRejoinerSiteId() && $rejoinerHelper->getDomain()) : ?>
+<?php if (
+    $rejoinerHelper->getRejoinerSiteId()
+    && (
+        ($rejoinerHelper->isRejoinerFrontendEnabled() && $rejoinerHelper->getDomain())
+        || $rejoinerHelper->isQueenOneFrontendEnabled()
+    )
+) : ?>
     <?php
     $domain = $escaper->escapeHtml($rejoinerHelper->getDomain());
     $siteId = $escaper->escapeHtml($rejoinerHelper->getRejoinerSiteId());
     $rejoinerScriptUri = $escaper->escapeHtml($rejoinerHelper->getRejoinerScriptUri());
+    $frontendTrackingMode = $escaper->escapeHtml($rejoinerHelper->getFrontendTrackingMode());
+    $queenOneTagUrl = $escaper->escapeHtml($rejoinerHelper->getQueenOneTagUrl());
     ?>
     <script type="text/x-magento-init">
         {
@@ -33,6 +41,8 @@ foreach ($childBlockNames as $childBlockName) {
                     "rejoinerSiteId"          : "<?= $siteId ?>",
                     "rejoinerDomain"          : "<?= $domain ?>",
                     "rejoinerScriptUri"       : "<?= $rejoinerScriptUri ?>",
+                    "frontendTrackingMode"    : "<?= $frontendTrackingMode ?>",
+                    "queenOneTagUrl"           : "<?= $queenOneTagUrl ?>",
                     "trackNumberEnabled"      : <?= $escaper->escapeHtml($rejoinerHelper->getTrackNumberEnabled()) ?>,
                     "persistFormsEnabled"     : <?= $escaper->escapeHtml($rejoinerHelper->getPersistFormsEnabled()) ?>,
                     "trackCartDataOnThisPage" : <?=
@@ -44,4 +54,3 @@ foreach ($childBlockNames as $childBlockName) {
         }
     </script>
 <?php endif ?>
-

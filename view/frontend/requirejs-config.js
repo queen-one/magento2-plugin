@@ -5,7 +5,8 @@
 var config = {
     map: {
         '*': {
-            RejoinerAcrTracking   : 'Rejoiner_Acr/js/tracking'
+            RejoinerAcrTracking : 'Rejoiner_Acr/js/tracking',
+            QueenOneTracking     : 'Rejoiner_Acr/js/queen-one'
         }
     },
     config: {

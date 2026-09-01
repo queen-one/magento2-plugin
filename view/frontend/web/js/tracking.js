@@ -4,9 +4,9 @@
  */
 define([
     'jquery',
-    'Magento_Customer/js/customer-data'
-
-], function($, customerData) {
+    'Magento_Customer/js/customer-data',
+    'QueenOneTracking'
+], function($, customerData, queenOne) {
     'use strict';
 
     $.widget('rejoiner.acrTracking', {
@@ -16,6 +16,8 @@ define([
             rejoinerSiteId: '',
             rejoinerDomain: '',
             rejoinerScriptUri: '',
+            frontendTrackingMode: 'rejoiner',
+            queenOneTagUrl: '',
             outputConversionData: false
         },
 
@@ -23,42 +25,64 @@ define([
             var storageData = customerData.get('rejoiner-acr'),
                 that = this;
 
-            if (this.options.rejoinerSiteId && this.options.rejoinerDomain) {
-                window._rejoiner = that.getRejoinerObject();
+            if (this.isQueenOneEnabled()) {
+                queenOne.ensureQueue(window);
             }
 
-            storageData.subscribe(function () {
+            this.processTrackingUpdate(false);
+
+            storageData.subscribe(function() {
                 if (!that.skipSubscription) {
-                    window._rejoiner = that.getRejoinerObject(true);
+                    that.processTrackingUpdate(true);
                 }
             });
 
-            this.connectRemoteScript();
+            this.connectRemoteScripts();
         },
 
-        getRejoinerObject: function (isAjaxUpdate) {
-            var isAjaxUpdate = isAjaxUpdate || false,
-                _rejoiner = window._rejoiner || [],
-                storageData = customerData.get('rejoiner-acr')();
+        processTrackingUpdate: function(isAjaxUpdate) {
+            var storageData = customerData.get('rejoiner-acr')(),
+                snapshot = $.extend({}, storageData);
+
+            if (this.isQueenOneEnabled()) {
+                this.trackQueenOne(snapshot, isAjaxUpdate);
+            }
+
+            if (this.isRejoinerEnabled()) {
+                window._rejoiner = this.getRejoinerObject(snapshot, isAjaxUpdate);
+            }
+
+            this.clearTransientStorageData(storageData, isAjaxUpdate);
+        },
+
+        isRejoinerEnabled: function() {
+            return this.options.frontendTrackingMode !== 'queen_one'
+                && this.options.rejoinerSiteId
+                && this.options.rejoinerDomain;
+        },
+
+        isQueenOneEnabled: function() {
+            return this.options.frontendTrackingMode !== 'rejoiner'
+                && this.options.rejoinerSiteId;
+        },
+
+        getRejoinerObject: function(storageData, isAjaxUpdate) {
+            var _rejoiner = window._rejoiner || [];
 
             if (this.options.trackCartDataOnThisPage == 1 || isAjaxUpdate) {
                 if (storageData.cartData) {
                     _rejoiner.push(["setCartData", JSON.parse(storageData.cartData)]);
                 }
                 if (storageData.cartItems) {
-                    JSON.parse(storageData.cartItems).forEach(function (element) {
+                    JSON.parse(storageData.cartItems).forEach(function(element) {
                         _rejoiner.push(["setCartItem", element]);
                     });
                 }
 
                 if (storageData.removedItems) {
-                    JSON.parse(storageData.removedItems).forEach(function (element) {
+                    JSON.parse(storageData.removedItems).forEach(function(element) {
                         _rejoiner.push(["removeCartItem", {product_id: element}]);
                     });
-                    this.skipSubscription = true;
-                    delete storageData.removedItems;
-                    customerData.set('rejoiner-acr', storageData);
-                    this.skipSubscription = false;
                 }
             }
 
@@ -78,40 +102,150 @@ define([
                 if (this.options.trackProductView) {
                     _rejoiner.push(['trackProductView', this.options.trackProductView]);
                 }
-                if (this.options.outputConversionData && storageData.convertionCartData && storageData.convertionCartItems) {
-
-                    var cart_data  = JSON.parse(storageData.convertionCartData),
-                        cart_items = JSON.parse(storageData.convertionCartItems);
+                if (this.options.outputConversionData
+                    && storageData.convertionCartData
+                    && storageData.convertionCartItems
+                ) {
                     _rejoiner.push(["sendConversion", {
-                        cart_data: cart_data,
-                        cart_items: cart_items
+                        cart_data: JSON.parse(storageData.convertionCartData),
+                        cart_items: JSON.parse(storageData.convertionCartItems)
                     }]);
-
-                    this.skipSubscription = true;
-                    delete storageData.convertionCartData;
-                    delete storageData.convertionCartItems;
-                    customerData.set('rejoiner-acr', storageData);
-                    this.skipSubscription = false;
                 }
             }
+
             if (storageData.customerEmail) {
                 _rejoiner.push(['setCustomerEmail', JSON.parse(storageData.customerEmail)]);
             }
             if (storageData.customerData) {
                 _rejoiner.push(['setCustomerData', JSON.parse(storageData.customerData)]);
             }
+
             return _rejoiner;
         },
 
-        connectRemoteScript: function() {
-            var s = document.createElement('script');
-            s.type = 'text/javascript';
-            s.async = true;
-            s.src =  this.options.rejoinerScriptUri;
-            var x = document.getElementsByTagName('script')[0];
-            x.parentNode.insertBefore(s, x);
-        }
+        trackQueenOne: function(storageData, isAjaxUpdate) {
+            var cart,
+                order,
+                product,
+                user;
 
+            if (!isAjaxUpdate) {
+                queenOne.pushEvent(window, this.options.rejoinerSiteId, 'page_viewed', {
+                    url: window.location.href
+                });
+
+                product = queenOne.buildProductViewed(this.options.trackProductView);
+                if (product) {
+                    queenOne.pushEvent(
+                        window,
+                        this.options.rejoinerSiteId,
+                        'product_viewed',
+                        product
+                    );
+                }
+            }
+
+            if (this.options.trackCartDataOnThisPage == 1 || isAjaxUpdate) {
+                cart = queenOne.buildCart(storageData.cartData, storageData.cartItems);
+                if (cart) {
+                    queenOne.pushEvent(window, this.options.rejoinerSiteId, 'cart_set', cart);
+                } else if (isAjaxUpdate && storageData.removedItems) {
+                    queenOne.pushEvent(window, this.options.rejoinerSiteId, 'cart_reset', {});
+                }
+            }
+
+            if (!isAjaxUpdate
+                && this.options.outputConversionData
+                && storageData.convertionCartData
+                && storageData.convertionCartItems
+            ) {
+                order = queenOne.buildOrder(
+                    storageData.convertionCartData,
+                    storageData.convertionCartItems
+                );
+                if (order) {
+                    queenOne.pushEvent(window, this.options.rejoinerSiteId, 'order_created', order);
+                }
+            }
+
+            user = queenOne.buildUserIdentified(storageData.customerEmail);
+            if (user) {
+                queenOne.pushEvent(window, this.options.rejoinerSiteId, 'user_identified', user);
+            }
+        },
+
+        clearTransientStorageData: function(storageData, isAjaxUpdate) {
+            var changed = false;
+
+            if ((this.options.trackCartDataOnThisPage == 1 || isAjaxUpdate)
+                && storageData.removedItems !== undefined
+            ) {
+                delete storageData.removedItems;
+                changed = true;
+            }
+
+            if (!isAjaxUpdate
+                && this.options.outputConversionData
+                && storageData.convertionCartData !== undefined
+                && storageData.convertionCartItems !== undefined
+            ) {
+                delete storageData.convertionCartData;
+                delete storageData.convertionCartItems;
+                changed = true;
+            }
+
+            if (!changed) {
+                return;
+            }
+
+            this.skipSubscription = true;
+            customerData.set('rejoiner-acr', storageData);
+            this.skipSubscription = false;
+        },
+
+        connectRemoteScripts: function() {
+            if (this.isRejoinerEnabled() && this.options.rejoinerScriptUri) {
+                this.connectRemoteScript(
+                    this.options.rejoinerScriptUri,
+                    'rejoiner-tracking-script'
+                );
+            }
+
+            if (this.isQueenOneEnabled() && this.options.queenOneTagUrl) {
+                this.connectRemoteScript(
+                    this.options.queenOneTagUrl,
+                    'queen-one-tracking-script',
+                    this.options.rejoinerSiteId
+                );
+            }
+        },
+
+        connectRemoteScript: function(uri, elementId, siteId) {
+            var script,
+                firstScript;
+
+            if (document.getElementById(elementId)) {
+                return;
+            }
+
+            script = document.createElement('script');
+            script.id = elementId;
+            script.type = 'text/javascript';
+            script.async = true;
+            script.src = uri;
+
+            if (siteId) {
+                script.setAttribute('data-site-id', siteId);
+            }
+
+            firstScript = document.getElementsByTagName('script')[0];
+            if (firstScript && firstScript.parentNode) {
+                firstScript.parentNode.insertBefore(script, firstScript);
+            } else {
+                document.head.appendChild(script);
+            }
+        }
     });
+
     return $.rejoiner.acrTracking;
 });

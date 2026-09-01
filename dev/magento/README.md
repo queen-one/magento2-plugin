@@ -162,6 +162,39 @@ Then inspect `window._rejoiner` while performing these actions:
 
 Record the evidence in [BASELINE_TEST_REPORT.md](BASELINE_TEST_REPORT.md).
 
+## Queen One shadow tracking
+
+The long-lived `queen-one` branch is the migration lane for existing clients.
+Once Packagist has indexed that branch, clients can pin it explicitly with:
+
+    composer require rejoiner/module-acr:"dev-queen-one"
+
+The branch declares `dev-queen-one` as `4.x-dev`; stable clients remain on the
+3.x tags until the Queen One implementation is complete and released.
+
+For a local frontend proof, keep all customer data synthetic and configure:
+
+    bin/magento config:set checkout/rejoiner_acr/frontend_tracking_mode dual
+    bin/magento config:set checkout/rejoiner_acr/queen_one_tag_url \
+        https://queen-one-init-development.queen-one.workers.dev/queen-one.js
+    bin/magento cache:flush
+
+`dual` keeps the current Rejoiner frontend active and additionally emits the
+canonical Queen One events. In browser DevTools inspect `window.__qotag._q`
+before the remote tag drains the queue, or filter Network requests by `track`.
+Exercise these scenarios:
+
+1. Any storefront page emits `page_viewed`.
+2. A product page additionally emits `product_viewed`.
+3. Add, update and remove cart items; `cart_set` contains the complete cart.
+4. Log in with a synthetic customer; `user_identified` contains the email.
+5. Place an offline-payment order; `order_created` contains the increment ID,
+   currency-aware total and complete items.
+
+The development tag still needs a valid development site ID accepted by the
+Event Collector. Queue inspection remains available if remote delivery is not
+provisioned yet.
+
 ## Resetting the lab
 
 The upstream generated lab contains destructive removal helpers. They are not

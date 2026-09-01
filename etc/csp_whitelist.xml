@@ -11,11 +11,20 @@
             <policy id="script-src">
                 <values>
                     <value id="rejoiner" type="host">*.rejoiner.com</value>
+                    <value id="queen-one" type="host">*.queen.one</value>
+                    <value id="queen-one-init-development" type="host">queen-one-init-development.queen-one.workers.dev</value>
+                    <value id="queen-one-core-development" type="host">queen-one-core-development.queen-one.workers.dev</value>
                 </values>
             </policy>
             <policy id="connect-src">
                 <values>
                     <value id="rejoiner" type="host">*.rejoiner.com</value>
+                    <value id="queen-one" type="host">*.queen.one</value>
+                </values>
+            </policy>
+            <policy id="frame-src">
+                <values>
+                    <value id="queen-one" type="host">*.queen.one</value>
                 </values>
             </policy>
         </policies>

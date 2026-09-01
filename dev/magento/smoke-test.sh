@@ -25,8 +25,14 @@ if bin/cli test -e app/code/Rejoiner/Acr/.local/magento; then
     exit 1
 fi
 bin/cli php -l app/code/Rejoiner/Acr/Helper/Data.php >/dev/null
+bin/cli php -l app/code/Rejoiner/Acr/Helper/Snippets.php >/dev/null
+bin/cli php -l app/code/Rejoiner/Acr/Helper/Conversion.php >/dev/null
+bin/cli php -l app/code/Rejoiner/Acr/Model/System/Config/Source/FrontendTrackingMode.php >/dev/null
 bin/cli php -l app/code/Rejoiner/Acr/Observer/ControllerActionPredispatch.php >/dev/null
 echo "PASS: generated lab is masked from the module mount"
+
+echo "Checking Composer metadata..."
+bin/cli composer validate --no-check-all app/code/Rejoiner/Acr/composer.json
 
 echo "Checking module and Magento schema status..."
 bin/magento module:status Rejoiner_Acr
