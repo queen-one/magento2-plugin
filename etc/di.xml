@@ -33,11 +33,4 @@
         </arguments>
     </type>
 
-    <type name="Magento\Newsletter\Model\Subscriber">
-        <plugin name="rejoiner_subscribe_general" type="Rejoiner\Acr\Plugin\Newsletter\Model\SubscriberPlugin" sortOrder="10" />
-    </type>
-
-    <type name="Magento\Checkout\Api\ShippingInformationManagementInterface">
-        <plugin name="rejoiner_subscribe_checkout" type="Rejoiner\Acr\Plugin\Checkout\Model\ShippingInformationManagementPlugin" sortOrder="10" />
-    </type>
 </config>
