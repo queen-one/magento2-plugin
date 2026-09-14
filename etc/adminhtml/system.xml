@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="checkout">
+            <tab>sales</tab>
+            <resource>Magento_Checkout::checkout</resource>
+            <group id="queen_one_connect" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Queen One Connect</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Publishes storefront activity through Queen One. Order tracking is delivered separately.</comment>
+                </field>
+                <field id="site_id" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Site ID</label>
+                    <validate>required-entry</validate>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="tag_url" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Tag URL</label>
+                    <validate>required-entry</validate>
+                    <backend_model>Rejoiner\Acr\Model\System\Config\Backend\TagUrl</backend_model>
+                    <comment>Use the HTTPS installation URL provided for your Queen One environment.</comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="debug" translate="label comment" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Debug</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

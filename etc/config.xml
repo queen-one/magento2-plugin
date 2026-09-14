@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <checkout>
+            <queen_one_connect>
+                <enabled>0</enabled>
+                <debug>0</debug>
+            </queen_one_connect>
+        </checkout>
+    </default>
+</config>
