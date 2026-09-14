@@ -1,12 +1,19 @@
-# Rejoiner Magento 2 extension
+# Queen One Connect for Magento 2
 
-This repository contains the legacy Rejoiner Magento 2 module registered as
-`Rejoiner_Acr`. It tracks storefront product, cart, customer and conversion
-activity and contains newsletter, coupon and cart-recovery integrations.
+This development branch publishes storefront page, product, cart and logged-in
+customer identity events through the externally loaded Queen One Tag. It is
+Connect-only: Rejoiner runtime, API calls and feature registrations are disconnected.
 
-The first development milestone is to preserve and observe the current
-behavior before migrating it to Queen One. A reproducible local Magento lab is
-provided under `dev/magento`.
+The internal module name `Rejoiner_Acr`, Composer identity and old database
+tables remain for now. This is a tracking foundation, not a complete migration:
+backend `order_created` and the remaining features are tracked separately.
+
+- [Supported events and deferred capabilities](docs/storefront-tracking-scope.md)
+- [Automated checks and staging validation](docs/storefront-tracking-validation.md)
+
+Configure **Stores → Configuration → Sales → Checkout → Queen One Connect**
+with the site ID and HTTPS Tag installation URL for your environment. Tracking
+is off by default and respects Magento Cookie Restriction when enabled.
 
 ## Local development
 
@@ -48,9 +55,10 @@ as part of the module.
 See [the Magento lab guide](dev/magento/README.md) for setup details, safety
 notes and the manual functional walkthrough.
 
-## Safety
+## Validation status
 
-Do not use production Rejoiner or Queen One credentials in the local lab.
-Keep Magento cron stopped until the scheduled conversion implementation has
-been fixed and verified: the legacy job can select the wrong order and process
-already-sent queue rows again.
+Use a dedicated Magento staging site and synthetic data for validation. Browser
+and downstream acceptance remain pending until that site and an event view are
+available. The legacy conversion cron is no longer registered. Conversion
+tracking will be implemented through the backend/Bridge milestone; this
+foundation alone is not a production campaign migration.
