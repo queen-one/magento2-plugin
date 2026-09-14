@@ -9,6 +9,10 @@
     <module name="Rejoiner_Acr" setup_version="3.2.1">
         <sequence>
             <module name="Magento_Newsletter" />
+            <module name="Magento_Cookie" />
+            <module name="Magento_Customer" />
+            <module name="Magento_Checkout" />
+            <module name="Magento_Csp" />
         </sequence>
     </module>
 </config>
