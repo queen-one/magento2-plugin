@@ -26,11 +26,14 @@ if bin/cli test -e app/code/Rejoiner/Acr/.local/magento; then
 fi
 bin/cli php -l app/code/Rejoiner/Acr/Helper/Data.php >/dev/null
 bin/cli php -l app/code/Rejoiner/Acr/Observer/ControllerActionPredispatch.php >/dev/null
+bin/cli php -l app/code/Rejoiner/Acr/CustomerData/QueenOne.php >/dev/null
+bin/cli php -l app/code/Rejoiner/Acr/Block/StorefrontTracking.php >/dev/null
 echo "PASS: generated lab is masked from the module mount"
 
 echo "Checking module and Magento schema status..."
 bin/magento module:status Rejoiner_Acr
 bin/magento setup:db:status
+bin/cli php app/code/Rejoiner/Acr/dev/magento/check-tracking.php
 
 assert_schema_object() {
     label="$1"
