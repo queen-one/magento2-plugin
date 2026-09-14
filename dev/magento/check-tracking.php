@@ -73,7 +73,7 @@ if (($section['queen-one-connect']['version'] ?? null) !== 1) {
 $source = $om->create(\Rejoiner\Acr\CustomerData\QueenOne::class, ['config' => $config]);
 $data = $source->getSectionData();
 if ($data['status'] === 'error') { throw new RuntimeException('Live section extraction failed'); }
-$policy = new \Rejoiner\Acr\Model\TagOriginPolicy($config);
+$policy = $om->create(\Rejoiner\Acr\Model\TagOriginPolicy::class, ['config' => $config]);
 if ($policy->collect()[0]->getHostSources() !== ['https://tag.example']) {
     throw new RuntimeException('Configured Tag origin missing from CSP');
 }
@@ -81,3 +81,64 @@ echo "PASS: enabled public block, private customer-data section and Tag CSP orig
 $scope->setValue('checkout/queen_one_connect/enabled', '0');
 if ($block->getInitJson() !== '') { throw new RuntimeException('Disabled tracking still renders'); }
 echo "PASS: disabled tracking renders no initialization\n";
+
+// Exercise the actual frontend DI graph: testing TagOriginPolicy alone cannot
+// detect an area-level collectors array replacing Magento's global collectors.
+// Replace only this instance's config with the request-local fixture, keeping
+// the installed (including compiled) collector graph intact.
+(new ReflectionProperty(\Rejoiner\Acr\Model\TagOriginPolicy::class, 'config'))->setValue(
+    $om->get(\Rejoiner\Acr\Model\TagOriginPolicy::class),
+    $config
+);
+$collector = $om->get(\Magento\Csp\Api\PolicyCollectorInterface::class);
+$om->get(\Magento\Csp\Model\Collector\DynamicCollector::class)->add(
+    new \Magento\Csp\Model\Policy\FetchPolicy('script-src', false, [], [], false, false, false, ['fixture-nonce'])
+);
+$indexPolicies = static function (array $policies): array {
+    $indexed = [];
+    foreach ($policies as $policy) {
+        if (isset($indexed[$policy->getId()])) { throw new RuntimeException('Duplicate CSP directive'); }
+        $indexed[$policy->getId()] = $policy;
+    }
+    ksort($indexed);
+    return $indexed;
+};
+$request = $om->get(\Magento\Framework\App\Request\Http::class);
+foreach (['cms', 'checkout'] as $route) {
+    $request->setRouteName($route)->setControllerName('index')->setActionName('index');
+    $scope->setValue('checkout/queen_one_connect/enabled', '0');
+    $baseline = $indexPolicies($collector->collect());
+    foreach (['script-src', 'connect-src', 'default-src', 'style-src', 'frame-ancestors'] as $directive) {
+        if (!isset($baseline[$directive])) { throw new RuntimeException('Missing Magento CSP: ' . $directive); }
+    }
+    $scripts = $baseline['script-src'];
+    if (!$scripts->isSelfAllowed()
+        || !in_array('fixture-nonce', $scripts->getNonceValues(), true)
+        || !in_array('queen-one-core-staging.queen.one', $scripts->getHostSources(), true)
+        || !in_array('events.staging.queen.one', $baseline['connect-src']->getHostSources(), true)
+    ) {
+        throw new RuntimeException('Magento config, dynamic or whitelist CSP collector was lost');
+    }
+    if ($scripts->isInlineAllowed() !== ($route === 'cms')) {
+        throw new RuntimeException('Expected normal homepage and restrictive checkout inline policy');
+    }
+    $scope->setValue('checkout/queen_one_connect/enabled', '1');
+    $enabled = $indexPolicies($collector->collect());
+    $expected = $baseline;
+    $expected['script-src'] = (new \Magento\Csp\Model\Collector\FetchPolicyMerger())->merge(
+        $scripts,
+        new \Magento\Csp\Model\Policy\FetchPolicy('script-src', false, ['https://tag.example'])
+    );
+    if (array_keys($enabled) !== array_keys($expected)) { throw new RuntimeException('Connect changed CSP directives'); }
+    foreach ($expected as $id => $policy) {
+        // Source order is immaterial: the Tag collector may precede Magento's.
+        $actualSources = explode(' ', $enabled[$id]->getValue());
+        $expectedSources = explode(' ', $policy->getValue());
+        sort($actualSources);
+        sort($expectedSources);
+        if ($actualSources !== $expectedSources) {
+            throw new RuntimeException('Connect changed existing CSP sources or permissions: ' . $id);
+        }
+    }
+}
+echo "PASS: frontend CSP composition preserves Magento policies, whitelist, nonces and checkout restrictions\n";
