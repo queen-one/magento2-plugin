@@ -1,6 +1,6 @@
 # Local Magento development lab
 
-This directory keeps the reproducible setup for running the legacy module in a
+This directory keeps the reproducible setup for running the Connect-only module in a
 real Magento storefront. Magento itself is generated in `.local/magento` and is
 not committed.
 
@@ -136,31 +136,20 @@ containers if you must merge the updated `compose.plugin.yaml` manually. Keep
 the nested `.local` volume mask when merging; bind mounts do not honor
 `.dockerignore` exclusions.
 
-Cron is deliberately not started by this repository. Do not run
-`bin/cron start` with real credentials until the scheduled conversion bug is
-fixed.
+Cron is deliberately not started by this repository. The legacy conversion job
+is disconnected on this branch; backend Connect order delivery is a later milestone.
 
-## Safe first functional test
+## Storefront tracking validation
 
-Use only synthetic customer/order data. In Magento Admin navigate to:
+Configure Stores > Configuration > Sales > Checkout > Queen One Connect with a
+dedicated Magento staging Site ID and the externally hosted QO Tag URL. Tracking
+is disabled by default; no Rejoiner credentials are required.
 
-    Stores > Configuration > Sales > Checkout
-    > eCommerce Email Marketing by Rejoiner
-
-For an offline browser inspection use a non-production site ID and key, leave
-the API secret empty, leave scheduled conversion enabled, and disable customer
-list, marketing and coupon features. In browser DevTools block
-`*rejoiner.com*` before enabling the module.
-
-Then inspect `window._rejoiner` while performing these actions:
-
-1. Open a product page.
-2. Add, update and remove a cart item.
-3. Register and log in with a synthetic customer.
-4. Place an offline-payment test order.
-5. Open the cart-recovery URL only in a separate disposable/incognito session.
-
-Record the evidence in [BASELINE_TEST_REPORT.md](BASELINE_TEST_REPORT.md).
+Use the [tracking validation runbook](../../docs/storefront-tracking-validation.md)
+for automated checks, browser scenarios, CSP/consent checks and downstream evidence.
+The [scope and deferred register](../../docs/storefront-tracking-scope.md) records
+which Rejoiner capabilities are deliberately not migrated in this milestone.
+`BASELINE_TEST_REPORT.md` remains a historical record of the earlier Rejoiner audit.
 
 ## Resetting the lab
 
