@@ -6,6 +6,15 @@
  */
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Merge at the same DI stage as Magento_Csp; frontend arguments replace the global array. -->
+    <type name="Magento\Csp\Model\CompositePolicyCollector">
+        <arguments>
+            <argument name="collectors" xsi:type="array">
+                <item name="queen_one_tag" xsi:type="object">Rejoiner\Acr\Model\TagOriginPolicy</item>
+            </argument>
+        </arguments>
+    </type>
+
     <type name="Rejoiner\Acr\Model\System\Config\Source\Salesrule" shared="false">
         <arguments>
             <argument name="metadataService" xsi:type="object">\Magento\SalesRule\Model\RuleFactory</argument>
