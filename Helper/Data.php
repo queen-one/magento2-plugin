@@ -278,7 +278,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function isEnabled(): bool
     {
-        return $this->scopeConfig->isSetFlag(self::XML_PATH_REJOINER_ENABLED);
+        // Legacy integrations are disconnected in the Connect-only release.
+        return false;
     }
 
     /**
@@ -658,43 +659,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     private function prepareClient($path, array $data): Client
     {
-        $apiKey          = $this->scopeConfig->getValue(self::XML_PATH_REJOINER_API_KEY);
-        $siteId          = $this->scopeConfig->getValue(self::XML_PATH_REJOINER_API_SITE_ID);
-        $rejoinerVersion = $this->getRejoinerVersion();
-
-        if (!$apiKey || !$siteId || empty($data)) {
-            $error = 'Missing API credentials';
-            $this->log($error, true);
-            throw new \Exception($error);
-        }
-
-        $requestBody   = mb_convert_encoding(json_encode($data), 'UTF-8', 'ISO-8859-1');
-        $requestPath   = sprintf($path, $siteId);
-        $authorization = sprintf('Rejoiner %s', $apiKey);
-
-        if ($rejoinerVersion == self::REJOINER_VERSION_1) {
-            $apiSecret = $this->scopeConfig->getValue(self::XML_PATH_REJOINER_API_SECRET);
-
-            if (!$apiSecret) {
-                $error = 'Missing API secret';
-                $this->log($error, true);
-                throw new \Exception($error);
-            }
-
-            $apiSecret = mb_convert_encoding((string) $apiSecret, 'UTF-8', 'ISO-8859-1');
-
-            $hmacData       = mb_convert_encoding(implode("\n", [\Laminas\Http\Request::METHOD_POST, $requestPath, $requestBody]), 'UTF-8', 'ISO-8859-1');
-            $codedApiSecret = base64_encode(hash_hmac('sha1', $hmacData, $apiSecret, true));
-            $authorization  = sprintf('Rejoiner %s:%s', $apiKey, $codedApiSecret);
-        }
-
-        /** @var Client $client */
-        $rejoinerApiUri = $this->getRejoinerApiUri();
-        $client = $this->httpClient->create(['uri' => $rejoinerApiUri . $requestPath]);
-        $client->setRawBody($requestBody);
-        $client->setHeaders(['Authorization' => $authorization, 'Content-type' => 'application/json;']);
-
-        return $client;
+        throw new \LogicException('Rejoiner delivery is disabled in Queen One Connect.');
     }
 
     /**
