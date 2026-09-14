@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<csp_whitelist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Csp:etc/csp_whitelist.xsd">
+    <policies>
+        <policy id="script-src"><values>
+            <value id="queen-one-queen-one-init-staging.queen-one.workers.dev" type="host">queen-one-init-staging.queen-one.workers.dev</value>
+            <value id="queen-one-queen-one-core-staging.queen.one" type="host">queen-one-core-staging.queen.one</value>
+            <value id="queen-one-cdn.queen.one" type="host">cdn.queen.one</value>
+        </values></policy>
+        <policy id="connect-src"><values>
+            <value id="queen-one-events.staging.queen.one" type="host">events.staging.queen.one</value>
+            <value id="queen-one-cdn.queen.one" type="host">cdn.queen.one</value>
+        </values></policy>
+    </policies>
+</csp_whitelist>

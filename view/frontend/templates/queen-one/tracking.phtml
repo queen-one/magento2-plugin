@@ -1,0 +1,7 @@
+<?php
+/** @var \Rejoiner\Acr\Block\StorefrontTracking $block */
+$initJson = $block->getInitJson();
+?>
+<?php if ($initJson !== ''): ?>
+<script type="text/x-magento-init"><?= /* @noEscape */ $initJson ?></script>
+<?php endif; ?>
