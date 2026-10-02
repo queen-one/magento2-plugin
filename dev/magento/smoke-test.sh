@@ -59,6 +59,14 @@ assert_schema_object \
     "newsletter_subscriber.added_to_rejoiner column" \
     "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletter_subscriber' AND column_name = 'added_to_rejoiner';" \
     || schema_failed=1
+assert_schema_object \
+    "queen_one_order_boundary table" \
+    "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'queen_one_order_boundary';" \
+    || schema_failed=1
+assert_schema_object \
+    "queen_one_order_outbox table" \
+    "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'queen_one_order_outbox';" \
+    || schema_failed=1
 
 if [ "${RUN_COMPILE}" = "1" ]; then
     echo "Running dependency-injection compilation..."

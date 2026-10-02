@@ -56,7 +56,9 @@ The internal `Rejoiner_Acr` module, Composer identity and old tables are retaine
 
 ## Deferred capabilities register
 
-All entries have status **Deferred**. External ticket links are intentionally unassigned until real follow-up issues exist.
+Entries remain **Deferred** except SF-04: its backend implementation and local verification
+now exist in [backend orders](backend-orders.md), with staging acceptance still pending.
+External ticket links are intentionally unassigned until real follow-up issues exist.
 
 | ID | Capability / current limitation | Reason and dependency | Completion criterion | Ticket |
 | --- | --- | --- | --- | --- |
@@ -75,6 +77,10 @@ All entries have status **Deferred**. External ticket links are intentionally un
 
 The legacy module sends order details through frontend `sendConversion`, and separately calls backend Rejoiner `convert` with only the purchaser email, immediately or via cron. Both paths originate from the success-page flow. This milestone disconnects both, and does **not** replace them with frontend `order_created`.
 
-Connect therefore has no purchase/conversion signal from this plugin until SF-04 / Milestone 2 is delivered. This foundation alone must not be described as a complete production campaign migration. In particular, purchase-based suppression and post-purchase behavior are not validated by these five storefront events.
+This storefront foundation alone has no purchase/conversion signal and must not be
+described as a complete production campaign migration. Milestone 2 now adds a separate,
+default-off backend outbox/cron path; it requires provisioning, explicit store activation
+and downstream acceptance. Purchase-based suppression and post-purchase behavior are
+not validated by the five storefront events or local backend tests alone.
 
 See [staging validation](storefront-tracking-validation.md) for commands, manual scenarios and outstanding acceptance evidence.

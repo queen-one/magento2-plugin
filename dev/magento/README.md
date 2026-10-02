@@ -103,7 +103,7 @@ It verifies:
 - PHP linting for the compatibility-sensitive helper and observer;
 - `Rejoiner_Acr` module status;
 - Magento database schema status;
-- the plugin queue table and both legacy extension columns;
+- the plugin queue table, both legacy extension columns and the Queen One order outbox tables;
 - an HTTPS response from the storefront.
 
 Run dependency-injection compilation as an additional gate:
@@ -137,7 +137,8 @@ the nested `.local` volume mask when merging; bind mounts do not honor
 `.dockerignore` exclusions.
 
 Cron is deliberately not started by this repository. The legacy conversion job
-is disconnected on this branch; backend Connect order delivery is a later milestone.
+is disconnected. See [backend orders](../../docs/backend-orders.md) for explicit
+Connect backend activation, manual cron execution and the local outage test.
 
 ## Storefront tracking validation
 

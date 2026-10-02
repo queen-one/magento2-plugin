@@ -13,8 +13,7 @@
                 </field>
                 <field id="site_id" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Site ID</label>
-                    <validate>required-entry</validate>
-                    <depends><field id="enabled">1</field></depends>
+                    <comment>Required when storefront or backend tracking is enabled.</comment>
                 </field>
                 <field id="tag_url" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Tag URL</label>
@@ -27,6 +26,23 @@
                     <label>Debug</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="backend_enabled" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Backend Order Delivery Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Independent of storefront tracking. After configuring credentials, activate each store with bin/magento queenone:orders activate STORE_ID. No history is sent automatically.</comment>
+                </field>
+                <field id="bridge_url" translate="label comment" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Bridge Base URL</label>
+                    <comment>HTTPS origin/base path, without /webhooks/events. Use your provisioned environment.</comment>
+                </field>
+                <field id="integration_id" translate="label" type="text" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Bridge Integration ID</label>
+                </field>
+                <field id="hmac_secret" translate="label comment" type="obscure" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Backend HMAC Secret</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                    <comment>Unique 64-character hexadecimal installation secret. Never a buyer token or catalog token.</comment>
                 </field>
             </group>
         </section>
