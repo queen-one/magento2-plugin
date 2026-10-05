@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="queen_one_order_boundary" resource="default" engine="innodb" comment="Queen One Explicit Order Enablement Boundary">
+        <column xsi:type="int" name="store_id" unsigned="true" nullable="false" comment="Store ID"/>
+        <column xsi:type="varchar" name="integration_id" length="24" nullable="false" comment="Integration ID"/>
+        <column xsi:type="varchar" name="site_id" length="128" nullable="false" comment="Site ID"/>
+        <column xsi:type="timestamp" name="started_at" nullable="false" on_update="false" default="CURRENT_TIMESTAMP" comment="Enablement Time UTC"/>
+        <column xsi:type="int" name="min_order_id" unsigned="true" nullable="false" comment="First Eligible Order ID"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY"><column name="store_id"/></constraint>
+    </table>
+    <table name="queen_one_order_outbox" resource="default" engine="innodb" comment="Queen One Backend Order Outbox">
+        <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="true" comment="Outbox ID"/>
+        <column xsi:type="varchar" name="event_id" length="64" nullable="false" comment="Stable Event ID"/>
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false" comment="Order Entity ID"/>
+        <column xsi:type="int" name="store_id" unsigned="true" nullable="false" comment="Store ID"/>
+        <column xsi:type="varchar" name="integration_id" length="24" nullable="false" comment="Integration ID"/>
+        <column xsi:type="varchar" name="site_id" length="128" nullable="false" comment="Site ID"/>
+        <column xsi:type="varchar" name="endpoint" length="1024" nullable="false" comment="Pinned Bridge Endpoint"/>
+        <column xsi:type="mediumtext" name="payload" nullable="true" comment="Immutable Native Envelope JSON"/>
+        <column xsi:type="varchar" name="status" length="24" nullable="false" default="pending" comment="Delivery State"/>
+        <column xsi:type="int" name="attempts" unsigned="true" nullable="false" default="0" comment="Delivery Attempts"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" on_update="false" default="CURRENT_TIMESTAMP" comment="Recorded At UTC"/>
+        <column xsi:type="timestamp" name="next_attempt_at" nullable="false" on_update="false" default="CURRENT_TIMESTAMP" comment="Next Attempt UTC"/>
+        <column xsi:type="timestamp" name="accepted_at" nullable="true" on_update="false" comment="Bridge Queue Acceptance UTC"/>
+        <column xsi:type="varchar" name="last_error" length="128" nullable="true" comment="Non PII Failure Code"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY"><column name="entity_id"/></constraint>
+        <constraint xsi:type="unique" referenceId="QUEEN_ONE_ORDER_OUTBOX_EVENT_ID"><column name="event_id"/></constraint>
+        <index referenceId="QUEEN_ONE_ORDER_OUTBOX_DELIVERY" indexType="btree"><column name="store_id"/><column name="status"/><column name="next_attempt_at"/></index>
+        <index referenceId="QUEEN_ONE_ORDER_OUTBOX_ORDER" indexType="btree"><column name="order_id"/><column name="integration_id"/><column name="site_id"/></index>
+    </table>
+</schema>
