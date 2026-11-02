@@ -1,64 +1,94 @@
 # Queen One Connect for Magento 2
 
-This development branch publishes storefront page, product, cart and logged-in
-customer identity events through the externally loaded Queen One Tag. It is
-Connect-only: Rejoiner runtime, API calls and feature registrations are disconnected.
+This branch provides the managed-pilot Queen One integration for Magento 2. It publishes
+storefront page, product, cart and logged-in identity events through Queen One Tag and
+delivers persisted orders to Bridge through a signed backend outbox. Legacy Rejoiner
+runtime, API calls and feature registrations remain disconnected.
 
-The internal module name `Rejoiner_Acr`, Composer identity and old database
-tables remain for now. This is a tracking foundation, not a complete migration:
-backend `order_created` and the remaining features are tracked separately.
+The internal module name `Rejoiner_Acr`, Composer identity and retained legacy database
+tables are unchanged for upgrade compatibility. Store provisioning is still performed
+with Queen One Ops for this pilot; self-service onboarding is a later milestone.
 
-- [Supported events and deferred capabilities](docs/storefront-tracking-scope.md)
-- [Automated checks and staging validation](docs/storefront-tracking-validation.md)
+## Production defaults
 
-Configure **Stores → Configuration → Sales → Checkout → Queen One Connect**
-with the site ID and HTTPS Tag installation URL for your environment. Tracking
-is off by default and respects Magento Cookie Restriction when enabled.
+The module defaults to the production services below. Merchants cannot edit these URLs
+in Magento Admin.
+
+- Tag: `https://queen-one-init.queen.one/queen-one.js`
+- Bridge: `https://integrations.queen.one`
+
+Staging operators may override the hidden configuration paths at the required scope:
+
+```sh
+bin/magento config:set checkout/queen_one_connect/tag_url \
+  https://queen-one-init-staging.queen-one.workers.dev/queen-one.js
+bin/magento config:set checkout/queen_one_connect/bridge_url \
+  https://integrations.staging.queen.one
+bin/magento cache:clean config layout full_page
+```
+
+Do not carry staging overrides into a production deployment. Verify the effective values
+with `bin/magento config:show` before enabling delivery.
+
+## Managed production installation
+
+Install the reviewed `dev-queen-one` revision through the customer's Composer repository
+and commit the resulting `composer.lock`. The locked source reference, not the moving
+branch name, is the release boundary for the pilot. Do not run an unreviewed update of the
+branch on a production store.
+
+After installing the module and taking the normal database backup:
+
+```sh
+bin/magento module:enable Rejoiner_Acr
+bin/magento setup:upgrade
+bin/magento setup:di:compile
+bin/magento cache:clean
+```
+
+Queen One Ops provisions the Bridge integration, Magento store binding and unique HMAC
+secret. At the target **store view** scope under **Stores → Configuration → Sales →
+Checkout → Queen One Connect**, configure the Site ID, Bridge Integration ID and encrypted
+HMAC secret. Storefront and backend delivery can be enabled independently.
+
+Activate backend delivery only after configuration has been verified:
+
+```sh
+bin/magento queenone:orders activate STORE_ID
+bin/magento queenone:orders run STORE_ID
+bin/magento queenone:orders status STORE_ID
+```
+
+Activation starts with orders created from that boundary forward. No history is sent
+unless an operator explicitly runs the bounded backfill command. Standard Magento cron
+must be running.
+
+See [the managed production runbook](docs/managed-production-pilot.md),
+[backend order operations](docs/backend-orders.md), and
+[storefront validation](docs/storefront-tracking-validation.md).
+
+## Supported pilot lane and known limitations
+
+- Magento Open Source 2.4.9 is the primary tested lane; 2.4.8-p5 is the compatibility lane.
+- Storefront tracking uses Magento RequireJS/customer-data and does not support Hyvä or
+  headless storefronts in this release.
+- Guest email capture and cart return URLs are deferred.
+- Bundle/grouped/custom product structures and fractional quantities are not supported.
+- Each Magento store requires its own Bridge integration binding.
+- Catalog setup uses a manually created Magento integration token and the approved secure
+  Ops process. The merchant must explicitly enable standalone integration bearer tokens.
 
 ## Local development
 
-Prerequisites:
+Prerequisites are Docker Desktop with at least 8 GB allocated, Git, Make and Adobe
+Marketplace Composer credentials. Bootstrap the default Magento 2.4.9 lab with:
 
-- Docker Desktop with at least 8 GB allocated to Docker;
-- Git and Make;
-- Adobe Marketplace public/private Composer access keys for repo.magento.com;
-- permission to add the local domain to `/etc/hosts` and install a local CA.
+```sh
+make magento-auth
+make magento-install
+make magento-smoke
+```
 
-Bootstrap and install Magento Open Source, sample data and this module:
-
-    make magento-auth
-    make magento-install
-
-The first command stores Adobe Marketplace Composer keys in the local
-docker-magento Composer home. It is interactive and must be run by the
-developer; the keys are never stored in this repository.
-
-The default compatibility lane is Magento Open Source 2.4.9. To create the
-older compatibility lane instead:
-
-    MAGENTO_VERSION=2.4.8-p5 make magento-install
-
-After installation:
-
-    make magento-status
-    make magento-smoke
-    make magento-start
-    make magento-stop
-
-The generated Magento source, databases and local credentials live under
-`.local/` and are intentionally excluded from Git. The module repository is
-bind-mounted into Magento at `app/code/Rejoiner/Acr`, so source changes are
-visible without copying the module. A nested Docker volume masks `.local` from
-the container so the generated Magento application is not recursively scanned
-as part of the module.
-
-See [the Magento lab guide](dev/magento/README.md) for setup details, safety
-notes and the manual functional walkthrough.
-
-## Validation status
-
-Use a dedicated Magento staging site and synthetic data for validation. Browser
-and downstream acceptance remain pending until that site and an event view are
-available. The legacy conversion cron is no longer registered. Conversion
-tracking will be implemented through the backend/Bridge milestone; this
-foundation alone is not a production campaign migration.
+Use `MAGENTO_VERSION=2.4.8-p5 make magento-install` for the compatibility lane. Generated
+Magento files and credentials live under `.local/` and are excluded from Git. See the
+[Magento lab guide](dev/magento/README.md) for the full workflow.

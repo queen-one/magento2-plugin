@@ -114,10 +114,8 @@ foreach (['cms', 'checkout'] as $route) {
     $scripts = $baseline['script-src'];
     if (!$scripts->isSelfAllowed()
         || !in_array('fixture-nonce', $scripts->getNonceValues(), true)
-        || !in_array('queen-one-core-staging.queen.one', $scripts->getHostSources(), true)
-        || !in_array('events.staging.queen.one', $baseline['connect-src']->getHostSources(), true)
     ) {
-        throw new RuntimeException('Magento config, dynamic or whitelist CSP collector was lost');
+        throw new RuntimeException('Magento config or dynamic CSP collector was lost');
     }
     if ($scripts->isInlineAllowed() !== ($route === 'cms')) {
         throw new RuntimeException('Expected normal homepage and restrictive checkout inline policy');
@@ -141,4 +139,4 @@ foreach (['cms', 'checkout'] as $route) {
         }
     }
 }
-echo "PASS: frontend CSP composition preserves Magento policies, whitelist, nonces and checkout restrictions\n";
+echo "PASS: frontend CSP composition preserves Magento policies, nonces and checkout restrictions\n";

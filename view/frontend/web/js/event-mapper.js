@@ -22,8 +22,8 @@ define([], function () {
         return email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? {email: email} : null;
     }
 
-    function cart(snapshot) {
-        var products, result, count;
+    function cart(snapshot, previousCartId) {
+        var products, result, count, emptyCartId;
         if (!snapshot || !Array.isArray(snapshot.items)) {
             throw new Error('missing_cart');
         }
@@ -31,7 +31,14 @@ define([], function () {
             if (snapshot.cart_item_count !== 0 || snapshot.cart_value !== 0) {
                 throw new Error('inconsistent_empty_cart');
             }
-            return null;
+            emptyCartId = id(previousCartId);
+            if (!emptyCartId) { return null; }
+            return {
+                cart_id: emptyCartId,
+                cart_value: amount(0, snapshot.currency_code),
+                cart_item_count: 0,
+                products: []
+            };
         }
         if (!id(snapshot.cart_id)) {
             throw new Error('missing_cart_id');

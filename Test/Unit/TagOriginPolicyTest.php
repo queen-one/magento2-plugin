@@ -13,7 +13,7 @@ use Rejoiner\Acr\Model\TrackingConfig;
 
 class TagOriginPolicyTest extends TestCase
 {
-    public function testAddsOnlyTheConfiguredOriginAndPreservesRestrictivePolicy(): void
+    public function testAddsUnknownConfiguredOriginAndPreservesRestrictivePolicy(): void
     {
         $original = new FetchPolicy(
             'script-src', false, ['https://existing.example'], [], true, false, false,
@@ -28,6 +28,45 @@ class TagOriginPolicyTest extends TestCase
         self::assertFalse($result->isEvalAllowed());
         self::assertSame($original->getNonceValues(), $result->getNonceValues());
         self::assertSame($original->getHashes(), $result->getHashes());
+    }
+
+    public function testAddsExactProductionDependencies(): void
+    {
+        $policies = (new CompositePolicyCollector(
+            [$this->collector('frontend', true, 'https://queen-one-init.queen.one/queen-one.js')],
+            [new FetchPolicyMerger()]
+        ))->collect([]);
+        $byId = [];
+        foreach ($policies as $policy) {
+            $byId[$policy->getId()] = $policy->getHostSources();
+            self::assertFalse($policy->isInlineAllowed());
+            self::assertFalse($policy->isEvalAllowed());
+        }
+
+        self::assertSame([
+            'https://queen-one-init.queen.one', 'https://queen-one-core.queen.one', 'https://cdn.queen.one'
+        ], $byId['script-src']);
+        self::assertSame(['https://events.queen.one', 'https://cdn.queen.one'], $byId['connect-src']);
+        self::assertSame(['https://frames-cdn.queen.one'], $byId['style-src']);
+    }
+
+    public function testAddsExactStagingDependencies(): void
+    {
+        $policies = (new CompositePolicyCollector([
+            $this->collector('frontend', true, 'https://queen-one-init-staging.queen-one.workers.dev/queen-one.js')
+        ], [new FetchPolicyMerger()]))->collect([]);
+        $byId = [];
+        foreach ($policies as $policy) {
+            $byId[$policy->getId()] = $policy->getHostSources();
+        }
+
+        self::assertSame([
+            'https://queen-one-init-staging.queen-one.workers.dev',
+            'https://queen-one-core-staging.queen.one',
+            'https://cdn.queen.one'
+        ], $byId['script-src']);
+        self::assertSame(['https://events.staging.queen.one', 'https://cdn.queen.one'], $byId['connect-src']);
+        self::assertSame(['https://queen-one-frames-staging.queen.one'], $byId['style-src']);
     }
 
     public function testDisabledTrackingLeavesPoliciesUntouched(): void
@@ -55,11 +94,15 @@ class TagOriginPolicyTest extends TestCase
         self::assertSame($policies, (new TagOriginPolicy($config, $state))->collect($policies));
     }
 
-    private function collector(string $area = 'frontend', bool $enabled = true): TagOriginPolicy
+    private function collector(
+        string $area = 'frontend',
+        bool $enabled = true,
+        string $tagUrl = 'https://tag.example:8443/queen-one.js?version=1'
+    ): TagOriginPolicy
     {
         $config = $this->createStub(TrackingConfig::class);
         $config->method('isEnabled')->willReturn($enabled);
-        $config->method('getTagUrl')->willReturn('https://tag.example:8443/queen-one.js?version=1');
+        $config->method('getTagUrl')->willReturn($tagUrl);
         $state = $this->createStub(State::class);
         $state->method('getAreaCode')->willReturn($area);
         return new TagOriginPolicy($config, $state);

@@ -36,6 +36,7 @@ class QueenOneSectionTest extends TestCase
         $section = new QueenOne($config, $checkout, $customer, $stores, $cookie, $cart, new NullLogger());
         $data = $section->getSectionData();
         self::assertSame('ready', $data['status']);
+        self::assertTrue($data['is_logged_in']);
         self::assertSame(['email' => 'buyer@example.test'], $data['identity']);
     }
 

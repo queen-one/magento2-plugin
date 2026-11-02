@@ -11,6 +11,27 @@ use Throwable;
 
 class TagOriginPolicy implements PolicyCollectorInterface
 {
+    private const ENVIRONMENT_ORIGINS = [
+        'queen-one-init.queen.one' => [
+            'script-src' => [
+                'https://queen-one-init.queen.one',
+                'https://queen-one-core.queen.one',
+                'https://cdn.queen.one'
+            ],
+            'connect-src' => ['https://events.queen.one', 'https://cdn.queen.one'],
+            'style-src' => ['https://frames-cdn.queen.one']
+        ],
+        'queen-one-init-staging.queen-one.workers.dev' => [
+            'script-src' => [
+                'https://queen-one-init-staging.queen-one.workers.dev',
+                'https://queen-one-core-staging.queen.one',
+                'https://cdn.queen.one'
+            ],
+            'connect-src' => ['https://events.staging.queen.one', 'https://cdn.queen.one'],
+            'style-src' => ['https://queen-one-frames-staging.queen.one']
+        ]
+    ];
+
     public function __construct(
         private TrackingConfig $config,
         private State $state
@@ -23,7 +44,10 @@ class TagOriginPolicy implements PolicyCollectorInterface
             if ($this->state->getAreaCode() === Area::AREA_FRONTEND && $this->config->isEnabled()) {
                 $url = parse_url($this->config->getTagUrl());
                 $origin = 'https://' . $url['host'] . (isset($url['port']) ? ':' . $url['port'] : '');
-                $defaultPolicies[] = new FetchPolicy('script-src', false, [$origin]);
+                $policies = self::ENVIRONMENT_ORIGINS[$url['host']] ?? ['script-src' => [$origin]];
+                foreach ($policies as $policy => $origins) {
+                    $defaultPolicies[] = new FetchPolicy($policy, false, $origins);
+                }
             }
         } catch (Throwable $error) {
             // Invalid tracking configuration must not break CSP header generation.

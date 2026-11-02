@@ -12,8 +12,9 @@ Consent/list APIs, catalog onboarding and Composer publication remain separate w
 2. Ops provision an active Magento2 Connect integration with the approved QO site,
    exact Magento store ID and a unique 64-character lowercase hex HMAC secret.
    See Bridge `src/platforms/magento2/events/README.md` and its provisioning script.
-3. Under Sales → Checkout → Queen One Connect, at the target **store view** scope,
-   set Site ID, Bridge Base URL (HTTPS), Integration ID and Backend HMAC Secret.
+3. Confirm the hidden Bridge URL resolves to the approved environment. Under Sales →
+   Checkout → Queen One Connect, at the target **store view** scope, set Site ID,
+   Integration ID and Backend HMAC Secret.
    The admin backend encrypts the secret; it is also marked sensitive for config
    export. Do not write a plaintext secret using config:set, put it in public HTML,
    commit it, or reuse a catalog/buyer/Connect token. Frontend and backend flags are independent.
@@ -43,6 +44,8 @@ Cron scans committed orders at/after that boundary, 100 per pass. It anti-joins 
 outbox instead of advancing a cursor, so out-of-order commits after activation are
 not skipped. Pre-boundary orders require explicit backfill. Native payload is a
 snapshot at discovery, not a reconstruction of data before subsequent order edits.
+Every persisted order after the boundary is discovered, regardless of payment,
+cancellation or later order state.
 Disabling backend delivery pauses processing; re-enabling resumes from the same
 boundary, including orders created while paused. It does not reset history.
 

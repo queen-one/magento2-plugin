@@ -10,9 +10,9 @@ Magento customer-data → Magento adapter → externally loaded Queen One Tag �
 
 `storefront-tracking.js` owns Magento subscriptions, consent, a bounded pre-load buffer and duplicate suppression. `event-mapper.js` maps source data. Neither implements the Tag runtime, accesses its internal queue, nor sends HTTP events directly. The adapter uses only `window.__qotag.push({type, siteid, time, data})` and the optional public `getSiteId()` accessor.
 
-Admin: Stores → Configuration → Sales → Checkout → **Queen One Connect**. The `checkout/queen_one_connect/` settings are `enabled`, `site_id`, `tag_url`, `debug`, with default/website/store inheritance. Tracking defaults to off. An enabled but incomplete configuration remains inactive. No Rejoiner credentials are read.
+Admin: Stores → Configuration → Sales → Checkout → **Queen One Connect**. Merchants configure `enabled`, `site_id` and `debug`, with default/website/store inheritance. The production Tag URL is an internal default; staging may override its hidden config path through deployment tooling. Tracking defaults to off. An enabled but incomplete configuration remains inactive. No Rejoiner credentials are read.
 
-The configured HTTPS Tag origin is added to script CSP. The bundled whitelist covers the verified staging core, configuration CDN and Collector; other environments require their actual downstream origins to be added explicitly. There is no wildcard Queen One or Rejoiner whitelist.
+The configured HTTPS Tag selects an exact production or staging CSP dependency set for Init, Core, configuration CDN, Collector and Frames styles. An unknown HTTPS override receives only its own script origin. There is no wildcard Queen One or Rejoiner whitelist.
 
 ## Supported event matrix
 
@@ -20,17 +20,16 @@ The configured HTTPS Tag origin is added to script CSP. The bundled whitelist co
 | --- | --- | --- |
 | `page_viewed` | Once per document after tracking permission | `url` |
 | `product_viewed` | Once per product detail document | `product_id` |
-| `cart_set` | Fresh initial nonempty cart; meaningful subsequent cart changes | `cart_id`, `cart_value`, `cart_item_count`, full `products`, optional `promo` |
-| `cart_reset` | Previously observed nonempty cart becomes explicitly empty | Previous `cart_id` |
+| `cart_set` | Fresh initial nonempty cart; meaningful changes; previously observed cart becomes empty | `cart_id`, `cart_value`, `cart_item_count`, full `products`, optional `promo`; empty transition uses zero values and `products: []` |
 | `user_identified` | Logged-in customer email becomes known or changes | `email` only |
 
 The initial customer-data cache is not published. After Magento initializes, the adapter requests one fresh `queen-one-connect` section and then reuses subscriptions. Duplicate section notifications, timestamps, `data_id` and item order do not cause duplicate events. Deduplication is per document; an unchanged persisted cart is published once again on the next document as required by the Tag integration contract.
 
-Only the last cart ID is retained in sessionStorage, scoped by site and store, so clearing a cart across a redirect can publish a reset. No email or event payload is persisted by the adapter. Blocked storage falls back to document-local state, so cross-document resets cannot be guaranteed in that case. Missing, unsupported or failed cart extraction never means an empty cart. Independently available email identity can still be published when cart extraction fails. Magento customer-data itself retains its normal private-content storage behavior.
+Only the last cart ID and its logged-in/guest context are retained in sessionStorage, scoped by site and store, so clearing a cart across a redirect can publish an empty `cart_set`. Logout drops the remembered customer-cart context instead of clearing a cart Magento will restore on the next login. No email or event payload is persisted by the adapter. Blocked storage falls back to document-local state, so cross-document clears cannot be guaranteed in that case. Missing, unsupported or failed cart extraction never means an empty cart. Independently available email identity can still be published when cart extraction fails. Magento customer-data itself retains its normal private-content storage behavior.
 
 ## Source contract and identifiers
 
-The private `queen-one-connect` section uses version `1`, `status` (`ready`, `unavailable`, `error`), `store_id`, `site_id`, nullable `identity` and a complete `cart`. These are structured JSON objects, not the nested JSON strings used by the prototype. Personal data is not embedded in full-page-cache HTML.
+The private `queen-one-connect` section uses version `1`, `status` (`ready`, `unavailable`, `error`), `store_id`, `site_id`, `is_logged_in`, nullable `identity` and a complete `cart`. These are structured JSON objects, not the nested JSON strings used by the prototype. Personal data is not embedded in full-page-cache HTML.
 
 - Product identifiers are Magento entity IDs represented as strings, matching the existing Bridge catalog extractor's source identifiers.
 - A configurable cart line uses its parent entity ID plus the chosen simple product entity ID as `variant_id`. The parent and child SKUs remain in the Magento section for future catalog mapping, not in the canonical event.

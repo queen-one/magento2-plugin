@@ -29,4 +29,11 @@ class TrackingConfigTest extends TestCase
         }
         self::assertTrue(TrackingConfig::isValidTagUrl('https://tag.example/queen-one.js?pr=1'));
     }
+
+    public function testProductionTagIsTheFallbackForAnUnsetDeploymentOverride(): void
+    {
+        $scope = $this->createStub(ScopeConfigInterface::class);
+        $scope->method('getValue')->willReturn('');
+        self::assertSame(TrackingConfig::DEFAULT_TAG_URL, (new TrackingConfig($scope))->getTagUrl());
+    }
 }
