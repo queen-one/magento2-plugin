@@ -21,9 +21,14 @@ bin/magento config:show checkout/queen_one_connect/tag_url
 bin/magento config:show checkout/queen_one_connect/bridge_url
 ```
 
-They must resolve to the approved production Tag and Bridge URLs. Configure Site ID,
-integration ID and HMAC secret at the target store-view scope. Never place the secret on
-the command line, in source control, logs, tickets or Slack.
+An empty result means the built-in production default is active. Every non-empty override
+must resolve to the approved production Tag and Bridge URLs. Configure Site ID, integration
+ID and HMAC secret at the target store-view scope. Never place the secret on the command
+line, in source control, logs, tickets or Slack.
+
+Run DI compilation and static-content deployment through the customer's normal release
+procedure. For an upgrade, that procedure must clean generated static/view-preprocessed
+artifacts first so files removed by an older module revision cannot remain as stale symlinks.
 
 The module supplies the complete CSP dependency set only for its built-in production and
 staging Tag environments. If a deployment uses another Tag host, add explicit Magento CSP

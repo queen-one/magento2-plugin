@@ -28,7 +28,9 @@ bin/magento cache:clean config layout full_page
 ```
 
 Do not carry staging overrides into a production deployment. Verify the effective values
-with `bin/magento config:show` before enabling delivery.
+with `bin/magento config:show` before enabling delivery. An empty result means the module
+uses its built-in production default; every non-empty override must match the approved
+environment.
 
 The built-in production and staging Tag environments include their complete CSP
 dependencies. A custom Tag host receives only its own `script-src` origin; deployments
@@ -48,8 +50,13 @@ After installing the module and taking the normal database backup:
 bin/magento module:enable Rejoiner_Acr
 bin/magento setup:upgrade
 bin/magento setup:di:compile
+bin/magento setup:static-content:deploy
 bin/magento cache:clean
 ```
+
+For an upgrade, clean generated static/view-preprocessed artifacts through the customer's
+normal deployment procedure before static-content deployment so files removed by an older
+module revision cannot remain as stale symlinks.
 
 Queen One Ops provisions the Bridge integration, Magento store binding and unique HMAC
 secret. At the target **store view** scope under **Stores → Configuration → Sales →

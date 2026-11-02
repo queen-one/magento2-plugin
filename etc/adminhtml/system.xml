@@ -15,6 +15,9 @@
                     <label>Site ID</label>
                     <comment>Required when storefront or backend tracking is enabled.</comment>
                 </field>
+                <field id="tag_url" type="text" sortOrder="25" showInDefault="0" showInWebsite="0" showInStore="0">
+                    <backend_model>Rejoiner\Acr\Model\System\Config\Backend\TagUrl</backend_model>
+                </field>
                 <field id="debug" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Debug</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
@@ -25,6 +28,7 @@
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     <comment>Independent of storefront tracking. After configuring credentials, activate each store with bin/magento queenone:orders activate STORE_ID. No history is sent automatically.</comment>
                 </field>
+                <field id="bridge_url" type="text" sortOrder="45" showInDefault="0" showInWebsite="0" showInStore="0"/>
                 <field id="integration_id" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Bridge Integration ID</label>
                 </field>

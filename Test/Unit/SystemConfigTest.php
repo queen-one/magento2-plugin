@@ -34,8 +34,12 @@ class SystemConfigTest extends TestCase
             $byId[(string) $field['id']] = $field;
         }
 
-        self::assertArrayNotHasKey('tag_url', $byId);
-        self::assertArrayNotHasKey('bridge_url', $byId);
+        foreach (['tag_url', 'bridge_url'] as $endpoint) {
+            self::assertArrayHasKey($endpoint, $byId);
+            self::assertSame('0', (string) $byId[$endpoint]['showInDefault']);
+            self::assertSame('0', (string) $byId[$endpoint]['showInWebsite']);
+            self::assertSame('0', (string) $byId[$endpoint]['showInStore']);
+        }
         self::assertSame('obscure', (string) $byId['hmac_secret']['type']);
         self::assertSame(
             'Magento\\Config\\Model\\Config\\Backend\\Encrypted',
