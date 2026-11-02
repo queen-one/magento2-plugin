@@ -123,10 +123,14 @@ test('initial empty and extraction errors never produce false cart resets', () =
 
 test('checkout completion clears the remembered cart across document navigation', () => {
     const f = fixture();
-    f.storage.set('queen-one:cart-context:magento-test:1', JSON.stringify({cart_id: '42', is_logged_in: true}));
-    f.start(); f.initialize(); f.load(); f.respond(snapshot([]));
+    f.storage.set('queen-one:cart-context:magento-test:1', JSON.stringify({
+        cart_id: '42', is_logged_in: true, currency_code: 'EUR'
+    }));
+    const completed = snapshot([]); completed.cart.currency_code = '';
+    f.start(); f.initialize(); f.load(); f.respond(completed);
     assert.equal(f.events.at(-1).type, 'cart_set');
-    assert.deepEqual(f.events.at(-1).data.products, []);
+    assert.deepEqual(f.events.at(-1).data, {cart_id: '42', cart_value: {amount: 0, currency_code: 'EUR'},
+        cart_item_count: 0, products: []});
     assert.equal(f.storage.size, 0);
 });
 
@@ -219,6 +223,7 @@ test('consent withdrawn during load discards backlog and grants current page onc
     assert.equal(f.types().filter(t => t === 'page_viewed').length, 1);
     assert.equal(f.types().filter(t => t === 'product_viewed').length, 1);
     assert.equal(f.types().includes('cart_set'), false);
+    assert.equal(f.storage.size, 0);
 });
 
 test('matching externally installed Tag is reused without replacing its API', () => {

@@ -41,8 +41,9 @@ define([
             }
         }
 
-        function rememberCart(cartId, isLoggedIn) {
-            lastCartContext = cartId ? {cart_id: cartId, is_logged_in: isLoggedIn} : null;
+        function rememberCart(cartId, isLoggedIn, currencyCode) {
+            lastCartContext = cartId && /^[A-Z]{3}$/.test(currencyCode) ?
+                {cart_id: cartId, is_logged_in: isLoggedIn, currency_code: currencyCode} : null;
             try {
                 if (lastCartContext) { window.sessionStorage.setItem(storageKey, JSON.stringify(lastCartContext)); }
                 else { window.sessionStorage.removeItem(storageKey); }
@@ -57,7 +58,8 @@ define([
                 if (!stored) { return; }
                 parsed = JSON.parse(stored);
                 if (parsed && typeof parsed.cart_id === 'string' && parsed.cart_id &&
-                    typeof parsed.is_logged_in === 'boolean') {
+                    typeof parsed.is_logged_in === 'boolean' &&
+                    typeof parsed.currency_code === 'string' && /^[A-Z]{3}$/.test(parsed.currency_code)) {
                     lastCartContext = parsed;
                 } else { window.sessionStorage.removeItem(storageKey); }
             } catch (error) {
@@ -163,14 +165,22 @@ define([
                 rememberCart(null);
                 return;
             }
-            try { cart = mapper.cart(snapshot.cart, lastCartContext && lastCartContext.cart_id); }
+            try {
+                cart = mapper.cart(
+                    snapshot.cart,
+                    lastCartContext && lastCartContext.cart_id,
+                    lastCartContext && lastCartContext.currency_code
+                );
+            }
             catch (error) { warn('cart_snapshot_invalid'); return; }
             cartKey = JSON.stringify(cart);
             if (cartKey === cartFingerprint) { return; }
             if (cart) {
                 if (publish('cart_set', cart)) {
                     cartFingerprint = cartKey;
-                    if (cart.products.length) { rememberCart(cart.cart_id, snapshot.is_logged_in); }
+                    if (cart.products.length) {
+                        rememberCart(cart.cart_id, snapshot.is_logged_in, cart.cart_value.currency_code);
+                    }
                     else { rememberCart(null); }
                 }
             } else { cartFingerprint = cartKey; }
@@ -190,6 +200,7 @@ define([
             var next = hasConsent(), product;
             if (failed) { return; }
             if (!next) {
+                if (allowed) { rememberCart(null); }
                 allowed = false;
                 if (queue.some(function (event) { return event.type === 'page_viewed'; })) { pageSent = false; }
                 if (queue.some(function (event) { return event.type === 'product_viewed'; })) { productSent = false; }

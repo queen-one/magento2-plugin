@@ -22,8 +22,8 @@ define([], function () {
         return email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? {email: email} : null;
     }
 
-    function cart(snapshot, previousCartId) {
-        var products, result, count, emptyCartId;
+    function cart(snapshot, previousCartId, previousCurrency) {
+        var products, result, count, emptyCartId, emptyCurrency;
         if (!snapshot || !Array.isArray(snapshot.items)) {
             throw new Error('missing_cart');
         }
@@ -33,9 +33,11 @@ define([], function () {
             }
             emptyCartId = id(previousCartId);
             if (!emptyCartId) { return null; }
+            emptyCurrency = /^[A-Z]{3}$/.test(snapshot.currency_code) ?
+                snapshot.currency_code : previousCurrency;
             return {
                 cart_id: emptyCartId,
-                cart_value: amount(0, snapshot.currency_code),
+                cart_value: amount(0, emptyCurrency),
                 cart_item_count: 0,
                 products: []
             };
