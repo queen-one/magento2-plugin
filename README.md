@@ -30,6 +30,11 @@ bin/magento cache:clean config layout full_page
 Do not carry staging overrides into a production deployment. Verify the effective values
 with `bin/magento config:show` before enabling delivery.
 
+The built-in production and staging Tag environments include their complete CSP
+dependencies. A custom Tag host receives only its own `script-src` origin; deployments
+using another environment must add explicit Magento CSP rules for that environment's
+Core, Collector and Frames origins before enabling storefront tracking.
+
 ## Managed production installation
 
 Install the reviewed `dev-queen-one` revision through the customer's Composer repository

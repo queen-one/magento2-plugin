@@ -43,8 +43,9 @@ class TagOriginPolicy implements PolicyCollectorInterface
         try {
             if ($this->state->getAreaCode() === Area::AREA_FRONTEND && $this->config->isEnabled()) {
                 $url = parse_url($this->config->getTagUrl());
-                $origin = 'https://' . $url['host'] . (isset($url['port']) ? ':' . $url['port'] : '');
-                $policies = self::ENVIRONMENT_ORIGINS[$url['host']] ?? ['script-src' => [$origin]];
+                $host = strtolower((string) $url['host']);
+                $origin = 'https://' . $host . (isset($url['port']) ? ':' . $url['port'] : '');
+                $policies = self::ENVIRONMENT_ORIGINS[$host] ?? ['script-src' => [$origin]];
                 foreach ($policies as $policy => $origins) {
                     $defaultPolicies[] = new FetchPolicy($policy, false, $origins);
                 }

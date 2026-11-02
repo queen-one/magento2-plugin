@@ -25,6 +25,11 @@ They must resolve to the approved production Tag and Bridge URLs. Configure Site
 integration ID and HMAC secret at the target store-view scope. Never place the secret on
 the command line, in source control, logs, tickets or Slack.
 
+The module supplies the complete CSP dependency set only for its built-in production and
+staging Tag environments. If a deployment uses another Tag host, add explicit Magento CSP
+rules for that environment's Core, Collector and Frames origins and verify enforced
+checkout CSP before enabling tracking.
+
 For catalog import, the merchant creates a least-privilege Magento integration, explicitly
 enables standalone integration bearer tokens, and transfers the token through the approved
 secret channel. Ops validates and saves it through the existing Bridge

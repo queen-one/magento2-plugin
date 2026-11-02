@@ -33,7 +33,7 @@ class TagOriginPolicyTest extends TestCase
     public function testAddsExactProductionDependencies(): void
     {
         $policies = (new CompositePolicyCollector(
-            [$this->collector('frontend', true, 'https://queen-one-init.queen.one/queen-one.js')],
+            [$this->collector('frontend', true, 'https://QUEEN-ONE-INIT.QUEEN.ONE/queen-one.js')],
             [new FetchPolicyMerger()]
         ))->collect([]);
         $byId = [];
