@@ -142,9 +142,10 @@ Connect backend activation, manual cron execution and the local outage test.
 
 ## Storefront tracking validation
 
-Configure Stores > Configuration > Sales > Checkout > Queen One Connect with a
-dedicated Magento staging Site ID and the externally hosted QO Tag URL. Tracking
-is disabled by default; no Rejoiner credentials are required.
+Set the staging Tag URL through the hidden deployment config path, then configure
+Stores > Configuration > Sales > Checkout > Queen One Connect with a dedicated
+Magento staging Site ID. Tracking is disabled by default; no Rejoiner credentials
+are required.
 
 Use the [tracking validation runbook](../../docs/storefront-tracking-validation.md)
 for automated checks, browser scenarios, CSP/consent checks and downstream evidence.

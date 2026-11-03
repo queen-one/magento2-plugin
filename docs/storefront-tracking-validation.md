@@ -38,7 +38,7 @@ The historical queue/table checks are retained because schema removal is outside
 - Obtain access to the actual downstream staging event view. A queue entry, Tag readiness or HTTP success alone is not downstream confirmation.
 - Use synthetic customer data. Provisioning, consent configuration and enabling real delivery are recorded explicitly below; do not put credentials in evidence.
 
-In Magento Admin, open Stores → Configuration → Sales → Checkout → Queen One Connect. Set Site ID and Tag URL, enable tracking and optionally debug. Flush config/layout/full-page caches and invalidate the storefront private section after changing site/store configuration. No Rejoiner credentials are needed.
+Set the staging Tag URL through the hidden deployment config path, then open Stores → Configuration → Sales → Checkout → Queen One Connect at the target store view. Set Site ID, enable tracking and optionally debug. Flush config/layout/full-page caches and invalidate the storefront private section after changing site/store configuration. No Rejoiner credentials are needed.
 
 ## Manual scenarios
 
@@ -51,8 +51,8 @@ Use DevTools Network with Preserve log and count events inside Collector batch b
 | Initial persisted cart and repeated identical section reloads | One initial `cart_set`; no notification duplicates |
 | Add simple/configurable, update quantity/options, remove one item | Complete `cart_set`, correct parent/child IDs, quantity, quote currency and row amounts |
 | Apply/remove coupon | Updated `promo`; documented cart value semantics maintained |
-| Remove last item; clear via redirect; reload empty cart | One transition `cart_reset` naming the prior cart; no repeated initial-empty resets |
-| Login, repeat customer-data load, logout, login as another synthetic customer | One identity per current email/document; no logged-out or stale previous-customer identity |
+| Remove last item; clear via redirect; complete checkout; reload empty cart | One empty `cart_set` naming the prior cart; no repeated initial-empty updates |
+| Login, repeat customer-data load, logout, login as another synthetic customer | Logout does not clear the retained customer cart; no logged-out or stale previous-customer identity |
 | Cookie Restriction on, missing/malformed/wrong-website permission | No Tag load or events; private section withholds identity/cart |
 | Accept cookies on current page | One current page/product and latest cart/identity flow; no pre-consent replay |
 | Two store views/sites and full-page cache | Correct site/store config and identifiers; no cached customer data in HTML |
@@ -68,10 +68,10 @@ Also inspect server-side outbound traffic while exercising newsletter, checkout 
 
 | Check | Result / evidence |
 | --- | --- |
-| JS unit scenarios | PASS, 2026-09-11: 16 tests, Node 22.15.1; CI workflow added (remote CI not yet run) |
-| PHP unit scenarios | PASS, 2026-09-11: 11 tests / 46 assertions, PHPUnit 12.5.33 on PHP 8.5.6 |
-| PHP lint / Magento XML / configuration smoke | PASS, 2026-09-11: source lint, schemas, legacy cron/observer removal, enabled/disabled block, section and configured Tag CSP origin |
-| Magento smoke / DI compilation | PASS, 2026-09-11: Magento 2.4.9, schema up to date, retained tables/columns present, DI compilation and storefront HTTP response |
+| JS unit scenarios | PASS, 2026-11-02: 18 tests locally and in CI |
+| PHP unit scenarios | PASS, 2026-11-02: 28 tests / 193 assertions, PHPUnit 12.5.33 on PHP 8.5.6 |
+| PHP lint / Magento XML / configuration smoke | PASS, 2026-11-02: all PHP source files, schemas, legacy cron/observer removal, enabled/disabled block, section and configured Tag CSP origin |
+| Magento smoke / DI compilation | PASS, 2026-11-02: Magento 2.4.9, schema up to date, retained tables/columns present, `setup:upgrade`, DI compilation, production-mode static deployment and storefront/checkout HTTP responses |
 | CSP regression fix | PASS, 2026-09-14: reproduced lost Magento directives with the frontend DI registration; global registration restores composition. PHP suite: 15 tests / 57 assertions; installed collector graph preserves enabled/disabled home and checkout policies, whitelist and dynamic nonce. DI compilation passed, caches cleaned; actual homepage HTTP 200 carries 14 CSP directives with Magento script permissions and staging Tag/core/Collector origins. Browser recheck remains manual |
 | Real Magento product mapping | PASS, 2026-09-11: unsaved sample quotes; simple 24-MB01 → product 1, qty 2, USD 68; configurable MH01 → parent 62 / variant 47 (MH01-XS-Black), qty 2, USD 104. No order, persisted quote or external event was created |
 | Browser commerce, consent, CSP and Network scenarios | Pending: no connected browser in implementation session |

@@ -10,6 +10,7 @@ use Magento\Store\Model\ScopeInterface;
 class Config
 {
     private const PREFIX = 'checkout/queen_one_connect/';
+    public const DEFAULT_BRIDGE_URL = 'https://integrations.queen.one';
 
     public function __construct(private ScopeConfigInterface $scope, private EncryptorInterface $encryptor)
     {
@@ -27,7 +28,7 @@ class Config
             ScopeInterface::SCOPE_STORE,
             $storeId
         ));
-        $url = rtrim($read('bridge_url'), '/');
+        $url = rtrim($read('bridge_url') ?: self::DEFAULT_BRIDGE_URL, '/');
         $integrationId = $read('integration_id');
         $siteId = $read('site_id');
         $secret = $this->encryptor->decrypt($read('hmac_secret'));

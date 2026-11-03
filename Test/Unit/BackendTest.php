@@ -61,6 +61,23 @@ class BackendTest extends TestCase
         self::assertEquals($this->configValues(), $config->get(2));
     }
 
+    public function testProductionBridgeIsTheFallbackForAnUnsetDeploymentOverride(): void
+    {
+        $scope = $this->createStub(ScopeConfigInterface::class);
+        $scope->method('getValue')->willReturnCallback(fn ($path) => match (basename($path)) {
+            'bridge_url' => '', 'integration_id' => '507f1f77bcf86cd799439011',
+            'site_id' => 'site', 'hmac_secret' => 'encrypted',
+            default => ''
+        });
+        $encryptor = $this->createStub(EncryptorInterface::class);
+        $encryptor->method('decrypt')->willReturn(str_repeat('a', 64));
+
+        self::assertSame(
+            Config::DEFAULT_BRIDGE_URL . '/webhooks/events/magento2/507f1f77bcf86cd799439011',
+            (new Config($scope, $encryptor))->get(1)['endpoint']
+        );
+    }
+
     public function testEnvelopePreservesNativeParentChildItemsAndDecimalQuantities(): void
     {
         $order = $this->getMockBuilder(Order::class)->disableOriginalConstructor()->onlyMethods(['getAllItems'])->getMock();

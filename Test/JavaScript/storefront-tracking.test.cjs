@@ -66,7 +66,7 @@ function fixture(overrides = {}) {
 }
 
 function snapshot(items = [{product_id: '100', variant_id: '101', sku: 'PARENT', variant_sku: 'CHILD', item_id: '9', quantity: 2, price: 12.5, total_amount: 25}]) {
-    return {version: 1, status: 'ready', store_id: '1', site_id: 'magento-test', data_id: 1,
+    return {version: 1, status: 'ready', store_id: '1', site_id: 'magento-test', is_logged_in: true, data_id: 1,
         identity: {email: 'buyer@example.test'},
         cart: {cart_id: '42', currency_code: 'EUR', cart_value: items.reduce((v, i) => v + i.total_amount, 0),
             cart_item_count: items.reduce((v, i) => v + i.quantity, 0), items, promo: ''}};
@@ -97,7 +97,7 @@ test('fresh server snapshot, not cached startup data; repeated notifications do 
     assert.equal(f.events[3].data.products[0].sku, undefined);
 });
 
-test('cart reorder is ignored, quantity/coupon changes publish, empty publishes one reset', () => {
+test('cart reorder is ignored, quantity/coupon changes publish, empty publishes one empty cart', () => {
     const f = fixture(); f.start(); f.initialize(); f.load();
     const state = snapshot(); state.cart.items.push({product_id: '200', quantity: 1, price: 5, total_amount: 5});
     state.cart.cart_item_count = 3; state.cart.cart_value = 30;
@@ -106,8 +106,10 @@ test('cart reorder is ignored, quantity/coupon changes publish, empty publishes 
     state.cart.promo = 'SAVE'; f.snapshot(state);
     assert.equal(f.types().filter(t => t === 'cart_set').length, 2);
     f.snapshot(snapshot([])); f.snapshot(snapshot([]));
-    assert.equal(f.types().filter(t => t === 'cart_reset').length, 1);
-    assert.deepEqual(f.events.at(-1).data, {cart_id: '42'});
+    assert.equal(f.types().filter(t => t === 'cart_set').length, 3);
+    assert.equal(f.types().includes('cart_reset'), false);
+    assert.deepEqual(f.events.at(-1).data, {cart_id: '42', cart_value: {amount: 0, currency_code: 'EUR'},
+        cart_item_count: 0, products: []});
 });
 
 test('initial empty and extraction errors never produce false cart resets', () => {
@@ -119,16 +121,40 @@ test('initial empty and extraction errors never produce false cart resets', () =
     assert.equal(f.types().includes('cart_reset'), false);
 });
 
-test('remembers only last cart ID across document navigation to clear an emptied cart', () => {
-    const f = fixture(); f.storage.set('queen-one:last-cart:magento-test:1', '42');
-    f.start(); f.initialize(); f.load(); f.respond(snapshot([]));
-    assert.deepEqual(f.events.at(-1), {type: 'cart_reset', siteid: 'magento-test', time: f.events.at(-1).time, data: {cart_id: '42'}});
+test('checkout completion clears the remembered cart across document navigation', () => {
+    const f = fixture();
+    f.storage.set('queen-one:cart-context:magento-test:1', JSON.stringify({
+        cart_id: '42', is_logged_in: true, currency_code: 'EUR'
+    }));
+    const completed = snapshot([]); completed.cart.currency_code = '';
+    f.start(); f.initialize(); f.load(); f.respond(completed);
+    assert.equal(f.events.at(-1).type, 'cart_set');
+    assert.deepEqual(f.events.at(-1).data, {cart_id: '42', cart_value: {amount: 0, currency_code: 'EUR'},
+        cart_item_count: 0, products: []});
     assert.equal(f.storage.size, 0);
+});
+
+test('ignores the legacy cart-id-only storage format fail-safe', () => {
+    const f = fixture();
+    f.storage.set('queen-one:last-cart:magento-test:1', '42');
+    f.start(); f.initialize(); f.load(); f.respond(snapshot([]));
+    assert.equal(f.types().includes('cart_set'), false);
+    assert.equal(f.storage.size, 0);
+});
+
+test('logout does not clear a customer cart that Magento restores on login', () => {
+    const f = fixture(); f.start(); f.initialize(); f.load(); f.respond(snapshot());
+    const loggedOut = snapshot([]); loggedOut.is_logged_in = false; loggedOut.identity = null;
+    f.snapshot(loggedOut);
+    assert.equal(f.types().filter(t => t === 'cart_set').length, 1);
+    assert.equal(f.storage.size, 0);
+    f.snapshot(snapshot());
+    assert.equal(f.types().filter(t => t === 'cart_set').length, 2);
 });
 
 test('identity updates, logout/login; no guest form scanning or order events', () => {
     const f = fixture(); f.start(); f.initialize(); f.load(); f.respond(snapshot());
-    f.snapshot({...snapshot(), identity: null}); f.snapshot(snapshot());
+    f.snapshot({...snapshot([]), identity: null, is_logged_in: false}); f.snapshot(snapshot());
     f.snapshot({...snapshot(), identity: {email: 'next@example.test'}});
     assert.equal(f.types().filter(t => t === 'user_identified').length, 3);
     assert.equal(f.types().includes('order_created'), false);
@@ -176,7 +202,10 @@ test('conflicting pre-existing Tag cannot receive Magento events', () => {
 });
 
 test('blocked storage, unrelated store/site and malformed cart values are safe', () => {
-    const f = fixture(); f.window.sessionStorage.getItem = () => { throw new Error('blocked'); };
+    const f = fixture();
+    f.window.sessionStorage.getItem = () => { throw new Error('blocked'); };
+    f.window.sessionStorage.setItem = () => { throw new Error('blocked'); };
+    f.window.sessionStorage.removeItem = () => { throw new Error('blocked'); };
     f.start(); f.initialize(); f.load(); f.respond({...snapshot(), store_id: '2'});
     f.snapshot({...snapshot(), site_id: 'another'});
     assert.equal(f.events.length, 2);
@@ -194,6 +223,7 @@ test('consent withdrawn during load discards backlog and grants current page onc
     assert.equal(f.types().filter(t => t === 'page_viewed').length, 1);
     assert.equal(f.types().filter(t => t === 'product_viewed').length, 1);
     assert.equal(f.types().includes('cart_set'), false);
+    assert.equal(f.storage.size, 0);
 });
 
 test('matching externally installed Tag is reused without replacing its API', () => {
@@ -219,7 +249,7 @@ test('cart extraction errors do not suppress independently available customer id
     const f = fixture(); f.start(); f.initialize(); f.load();
     f.respond({...snapshot(), status: 'error', cart: undefined});
     assert.deepEqual(f.types(), ['page_viewed', 'product_viewed', 'user_identified']);
-    f.snapshot({version: 1, store_id: '1', site_id: 'magento-test', status: 'error'});
+    f.snapshot({version: 1, store_id: '1', site_id: 'magento-test', is_logged_in: true, status: 'error'});
     f.snapshot(snapshot());
     assert.equal(f.types().filter(t => t === 'user_identified').length, 1);
     assert.equal(f.types().filter(t => t === 'cart_set').length, 1);

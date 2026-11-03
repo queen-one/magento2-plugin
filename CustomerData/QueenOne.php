@@ -35,7 +35,9 @@ class QueenOne implements SectionSourceInterface
             if (!$this->config->isEnabled() || $this->cookie->isUserNotAllowSaveCookie()) {
                 return $result;
             }
-            $email = $this->customerSession->isLoggedIn()
+            $isLoggedIn = $this->customerSession->isLoggedIn();
+            $result['is_logged_in'] = $isLoggedIn;
+            $email = $isLoggedIn
                 ? trim((string) $this->customerSession->getCustomerData()->getEmail()) : '';
             $result['identity'] = $email !== '' ? ['email' => $email] : null;
             $result['cart'] = $this->cartSnapshot->build($this->checkoutSession->getQuote());

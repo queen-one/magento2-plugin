@@ -9,6 +9,7 @@ use Magento\Store\Model\ScopeInterface;
 class TrackingConfig
 {
     private const PATH = 'checkout/queen_one_connect/';
+    public const DEFAULT_TAG_URL = 'https://queen-one-init.queen.one/queen-one.js';
 
     public function __construct(private ScopeConfigInterface $scopeConfig)
     {
@@ -21,7 +22,8 @@ class TrackingConfig
 
     public function getTagUrl(): string
     {
-        return trim((string) $this->scopeConfig->getValue(self::PATH . 'tag_url', ScopeInterface::SCOPE_STORE));
+        $url = trim((string) $this->scopeConfig->getValue(self::PATH . 'tag_url', ScopeInterface::SCOPE_STORE));
+        return $url !== '' ? $url : self::DEFAULT_TAG_URL;
     }
 
     public static function isValidTagUrl(string $url): bool

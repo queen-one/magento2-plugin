@@ -28,6 +28,10 @@ bin/cli php -l app/code/Rejoiner/Acr/Helper/Data.php >/dev/null
 bin/cli php -l app/code/Rejoiner/Acr/Observer/ControllerActionPredispatch.php >/dev/null
 bin/cli php -l app/code/Rejoiner/Acr/CustomerData/QueenOne.php >/dev/null
 bin/cli php -l app/code/Rejoiner/Acr/Block/StorefrontTracking.php >/dev/null
+bin/cli php -l app/code/Rejoiner/Acr/Model/TrackingConfig.php >/dev/null
+bin/cli php -l app/code/Rejoiner/Acr/Model/TagOriginPolicy.php >/dev/null
+bin/cli php -l app/code/Rejoiner/Acr/Model/Backend/Config.php >/dev/null
+bin/cli php -l app/code/Rejoiner/Acr/Test/Unit/SystemConfigTest.php >/dev/null
 echo "PASS: generated lab is masked from the module mount"
 
 echo "Checking module and Magento schema status..."

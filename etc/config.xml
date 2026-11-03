@@ -6,6 +6,8 @@
                 <enabled>0</enabled>
                 <backend_enabled>0</backend_enabled>
                 <debug>0</debug>
+                <tag_url>https://queen-one-init.queen.one/queen-one.js</tag_url>
+                <bridge_url>https://integrations.queen.one</bridge_url>
             </queen_one_connect>
         </checkout>
     </default>

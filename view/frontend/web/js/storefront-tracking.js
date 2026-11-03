@@ -15,8 +15,8 @@ define([
     return function (config) {
         var queue = [], failed = false, loaded = false, started = false, allowed = false,
             timer, refreshPending = false, initialized = false, pageSent = false,
-            productSent = false, cartFingerprint, identityFingerprint, lastCartId,
-            section, storageKey, script, subscription;
+            productSent = false, cartFingerprint, identityFingerprint, lastCartContext,
+            section, storageKey, legacyStorageKey, script, subscription;
 
         function warn(code) {
             if (config.debug && window.console) {
@@ -41,12 +41,30 @@ define([
             }
         }
 
-        function rememberCart(cartId) {
-            lastCartId = cartId;
+        function rememberCart(cartId, isLoggedIn, currencyCode) {
+            lastCartContext = cartId && /^[A-Z]{3}$/.test(currencyCode) ?
+                {cart_id: cartId, is_logged_in: isLoggedIn, currency_code: currencyCode} : null;
             try {
-                if (cartId) { window.sessionStorage.setItem(storageKey, cartId); }
+                if (lastCartContext) { window.sessionStorage.setItem(storageKey, JSON.stringify(lastCartContext)); }
                 else { window.sessionStorage.removeItem(storageKey); }
             } catch (error) { /* Commerce must work with storage disabled. */ }
+        }
+
+        function restoreCart() {
+            var stored, parsed;
+            try {
+                window.sessionStorage.removeItem(legacyStorageKey);
+                stored = window.sessionStorage.getItem(storageKey);
+                if (!stored) { return; }
+                parsed = JSON.parse(stored);
+                if (parsed && typeof parsed.cart_id === 'string' && parsed.cart_id &&
+                    typeof parsed.is_logged_in === 'boolean' &&
+                    typeof parsed.currency_code === 'string' && /^[A-Z]{3}$/.test(parsed.currency_code)) {
+                    lastCartContext = parsed;
+                } else { window.sessionStorage.removeItem(storageKey); }
+            } catch (error) {
+                try { window.sessionStorage.removeItem(storageKey); } catch (ignored) { /* optional */ }
+            }
         }
 
         function stop(code) {
@@ -132,7 +150,7 @@ define([
             var user, userKey, cart, cartKey;
             if (failed || !hasConsent() || !snapshot || snapshot.version !== 1 ||
                 ['ready', 'error'].indexOf(snapshot.status) === -1 || snapshot.store_id !== config.storeId ||
-                snapshot.site_id !== config.siteId) { return; }
+                snapshot.site_id !== config.siteId || typeof snapshot.is_logged_in !== 'boolean') { return; }
             if (Object.prototype.hasOwnProperty.call(snapshot, 'identity')) {
                 user = mapper.identity(snapshot.identity);
                 userKey = JSON.stringify(user);
@@ -141,15 +159,29 @@ define([
                 }
             }
             if (snapshot.status !== 'ready') { warn('cart_section_unavailable'); return; }
-            try { cart = mapper.cart(snapshot.cart); }
+            if (snapshot.cart && Array.isArray(snapshot.cart.items) && snapshot.cart.items.length === 0 &&
+                lastCartContext && lastCartContext.is_logged_in && !snapshot.is_logged_in) {
+                cartFingerprint = undefined;
+                rememberCart(null);
+                return;
+            }
+            try {
+                cart = mapper.cart(
+                    snapshot.cart,
+                    lastCartContext && lastCartContext.cart_id,
+                    lastCartContext && lastCartContext.currency_code
+                );
+            }
             catch (error) { warn('cart_snapshot_invalid'); return; }
             cartKey = JSON.stringify(cart);
             if (cartKey === cartFingerprint) { return; }
             if (cart) {
-                if (publish('cart_set', cart)) { cartFingerprint = cartKey; rememberCart(cart.cart_id); }
-            } else if (lastCartId) {
-                if (publish('cart_reset', {cart_id: lastCartId})) {
-                    cartFingerprint = cartKey; rememberCart(null);
+                if (publish('cart_set', cart)) {
+                    cartFingerprint = cartKey;
+                    if (cart.products.length) {
+                        rememberCart(cart.cart_id, snapshot.is_logged_in, cart.cart_value.currency_code);
+                    }
+                    else { rememberCart(null); }
                 }
             } else { cartFingerprint = cartKey; }
         }
@@ -168,6 +200,7 @@ define([
             var next = hasConsent(), product;
             if (failed) { return; }
             if (!next) {
+                if (allowed) { rememberCart(null); }
                 allowed = false;
                 if (queue.some(function (event) { return event.type === 'page_viewed'; })) { pageSent = false; }
                 if (queue.some(function (event) { return event.type === 'product_viewed'; })) { productSent = false; }
@@ -180,7 +213,7 @@ define([
             allowed = true;
             if (!started) {
                 started = true;
-                try { lastCartId = window.sessionStorage.getItem(storageKey); } catch (error) { /* optional */ }
+                restoreCart();
                 loadTag();
             }
             if (!pageSent) { pageSent = publish('page_viewed', {url: window.location.href}); }
@@ -196,7 +229,8 @@ define([
                 return;
             }
             instance = {siteId: config.siteId, tagUrl: config.tagUrl};
-            storageKey = 'queen-one:last-cart:' + config.siteId + ':' + config.storeId;
+            storageKey = 'queen-one:cart-context:' + config.siteId + ':' + config.storeId;
+            legacyStorageKey = 'queen-one:last-cart:' + config.siteId + ':' + config.storeId;
             section = customerData.get(SECTION);
             subscription = section.subscribe(guarded(function (snapshot) {
                 checkConsent();
